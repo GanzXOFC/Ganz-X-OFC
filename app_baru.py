@@ -3,8 +3,11 @@ import sqlite3
 import secrets
 import requests
 from functools import wraps
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, render_template
 from werkzeug.security import generate_password_hash, check_password_hash
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or secrets.token_hex(32)
