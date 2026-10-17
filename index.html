@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GANZ X - OFC</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: #000;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  overflow-x: hidden;
+  padding: 0 16px 115px;
+}
+
+/* LATAR BINTANG */
+#space {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: #000;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#stars {
+  position: absolute;
+  inset: 0;
+}
+
+.star {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  background: #fff;
+  animation: twinkle var(--duration) ease-in-out var(--delay) infinite;
+}
+
+.star.small {
+  box-shadow: 0 0 3px #fff;
+}
+
+.star.blue {
+  background: #8bbcff;
+  box-shadow: 0 0 5px #398cff, 0 0 10px #2255ff;
+}
+
+.star.purple {
+  background: #e0b5ff;
+  box-shadow: 0 0 5px #b66aff, 0 0 12px #843cff;
+}
+
+.star.big {
+  width: 3px !important;
+  height: 3px !important;
+  box-shadow: 0 0 6px #fff, 0 0 14px #829dff;
+}
+
+.star.big::before,
+.star.big::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: linear-gradient(transparent, white, transparent);
+  transform: translate(-50%, -50%);
+}
+
+.star.big::before {
+  width: 1px;
+  height: 17px;
+}
+
+.star.big::after {
+  width: 17px;
+  height: 1px;
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: .2;
+    transform: scale(.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+/* ISI HALAMAN */
+.content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+/* PROFIL: BAGIAN PALING ATAS */
+.profile-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding-top: 20px;
+}
+
+.profile {
+  flex: 0 0 65px;
+  width: 65px;
+  height: 65px;
+  overflow: hidden;
+  border-radius: 0;
+  border: 2px solid #7095ff;
+  box-shadow: 0 0 12px #655bff;
+  background: #080812;
+}
+
+.profile img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.profile-name {
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  background: linear-gradient(
+    90deg,
+    #42a5ff,
+    #4d75ff,
+    #9870ff,
+    #c16bff,
+    #6b8cff
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.profile-subtitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .7px;
+  background: linear-gradient(90deg, #63c5ff, #8290ff, #c18aff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+/* HALAMAN HOME */
+#gx-home {
+  position: relative;
+  width: 100%;
+  padding: 65px 4px 35px;
+  text-align: center;
+  scroll-margin-top: 0;
+}
+
+.gx-welcome {
+  margin-bottom: 15px;
+  font-size: 25px;
+  line-height: 1.3;
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: linear-gradient(90deg, #42a5ff, #4d75ff, #9870ff, #c16bff, #6b8cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.gx-title {
+  font-size: clamp(27px, 7vw, 36px);
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: .3px;
+  background: linear-gradient(
+    90deg,
+    #42a5ff,
+    #4d75ff,
+    #9870ff,
+    #c16bff,
+    #6b8cff
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(111, 114, 255, .28));
+}
+
+.gx-description {
+  margin: 0 0 26px;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.gx-wa-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 16px;
+  border: 1px solid #91a2ff;
+  border-radius: 16px;
+  background: linear-gradient(100deg, #328cff, #6b73ff, #a56aff);
+  box-shadow: 0 0 16px rgba(93, 120, 255, .32);
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: .6px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gx-wa-button:active {
+  transform: scale(.97);
+}
+
+.gx-wa-button svg {
+  flex-shrink: 0;
+  width: 29px;
+  height: 29px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gx-home-line {
+  display: block;
+  width: 125px;
+  max-width: 100%;
+  height: 3px;
+  margin: 8px auto 0;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #42a5ff, #9870ff, #c16bff);
+  box-shadow: 0 0 10px #777cff;
+}
+
+/* NAVBAR BAWAH - bingkai satu kontur dengan lengkungan HOME */
+#gx-bottom-nav {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 9999;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 24px 8px 8px;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 140' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop stop-color='%23245db4'/%3E%3Cstop offset='.5' stop-color='%234a4ebe'/%3E%3Cstop offset='.78' stop-color='%237d53cb'/%3E%3Cstop offset='1' stop-color='%234c68c9'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M30 32 H205 C244 32 238 4 300 4 C362 4 356 32 395 32 H570 Q596 32 596 58 V110 Q596 136 570 136 H30 Q4 136 4 110 V58 Q4 32 30 32 Z' fill='url(%23g)' fill-opacity='.98' stroke='%238290ff' stroke-width='2'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  box-shadow: none;
+  isolation: isolate;
+}
+#gx-bottom-nav::before {
+  content: none !important;
+}
+.gx-nav-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 54px;
+  padding: 4px 2px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.gx-nav-btn span {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .35px;
+  white-space: nowrap;
+}
+.gx-nav-btn svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.gx-nav-free {
+  min-height: 56px;
+  background: linear-gradient(135deg, #4ba9ff, #647fff);
+  transform: scale(.92);
+}
+.gx-nav-home {
+  background: linear-gradient(135deg, #788aff, #b17aff, #8d77ff);
+  border: 2px solid #e0d2ff;
+  border-radius: 50% !important;
+  width: 72px !important;
+  height: 72px !important;
+  min-height: 72px !important;
+  justify-self: center;
+  align-self: center;
+  padding: 0 !important;
+  aspect-ratio: 1 / 1;
+  transform: translateY(-5px);
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 18px rgba(177,122,255,.55);
+}
+.gx-nav-home svg {
+  width: 36px !important;
+  height: 36px !important;
+}
+.gx-nav-home span {
+  display: none !important;
+}
+
+.gx-nav-vip {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+#gx-bottom-nav .gx-nav-vip svg {
+  display: block !important;
+  width: 24px !important;
+  height: 24px !important;
+  margin: 0 auto !important;
+  flex: 0 0 24px !important;
+  transform: translateX(0) !important;
+}
+
+.gx-nav-vip {
+  min-height: 56px;
+  background: linear-gradient(135deg, #9d7bff, #c07dff);
+  transform: scale(.92);
+}
+.gx-nav-btn:active {
+  transform: scale(.96);
+}
+
+/* LAYAR KECIL */
+@media (max-width: 360px) {
+  body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .profile-name {
+    font-size: 17px;
+  }
+
+  #gx-bottom-nav {
+    left: 8px;
+    right: 8px;
+    gap: 4px;
+  }
+}
+
+/* FORCE FOTO PROFIL BULAT */
+.profile-header .profile {
+  width: 65px !important;
+  height: 65px !important;
+  flex: 0 0 65px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+}
+.profile-header .profile img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+}
+
+
+/* NAMA KECIL DI BAWAH CHANNEL WHATSAPP */
+.gx-signature {
+  margin-top: 16px;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+
+/* KONTAK NO ADMIN */
+.gx-admin {
+  width: 100%;
+  margin: 0 auto 26px;
+  text-align: center;
+}
+
+.gx-admin-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  color: #c5c9ff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.gx-admin-label svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: #8bbcff;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gx-admin-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 145px;
+  max-width: 100%;
+  min-height: 44px;
+  margin: 0 auto;
+  padding: 9px 12px;
+  border: 1px solid #687be0;
+  border-radius: 14px;
+  background: linear-gradient(110deg, rgba(36,93,180,.25), rgba(125,83,203,.25));
+  box-shadow: 0 0 12px rgba(91,110,255,.12);
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.gx-admin-link svg {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: #91baff;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gx-admin-arrow {
+  color: #c5a6ff;
+  font-size: 17px;
+}
+
+.gx-admin-link:active {
+  transform: scale(.98);
+}
+
+
+/* Perapian tombol NO ADMIN */
+.gx-admin-link {
+  width: 145px !important;
+  max-width: 100% !important;
+  min-height: 42px !important;
+  margin: 0 auto !important;
+  padding: 8px 10px !important;
+  gap: 7px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  font-size: 12px !important;
+  letter-spacing: 0 !important;
+}
+.gx-admin-link > span:not(.gx-admin-arrow) {
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+.gx-admin-link svg {
+  width: 19px !important;
+  height: 19px !important;
+  flex: 0 0 19px !important;
+}
+.gx-admin-arrow {
+  flex-shrink: 0 !important;
+  font-size: 14px !important;
+}
+
+
+/* Perbaikan bentuk logo WhatsApp NO ADMIN */
+.gx-admin-link svg {
+  width: 21px !important;
+  height: 21px !important;
+  min-width: 21px !important;
+  min-height: 21px !important;
+  max-width: 21px !important;
+  max-height: 21px !important;
+  flex: 0 0 21px !important;
+  aspect-ratio: 1 / 1 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  transform: none !important;
+}
+
+
+/* Bentuk logo WhatsApp NO ADMIN */
+.gx-admin-link svg {
+  width: 23px !important;
+  height: 23px !important;
+  min-width: 23px !important;
+  min-height: 23px !important;
+  max-width: 23px !important;
+  max-height: 23px !important;
+  flex: 0 0 23px !important;
+  aspect-ratio: 1 / 1 !important;
+  display: block !important;
+  overflow: visible !important;
+}
+
+/* Kecilkan simbol telepon di dalam logo */
+.gx-admin-link svg path:nth-of-type(2) {
+  transform: scale(.82);
+  transform-origin: 12px 12px;
+}
+
+
+/* Besarkan lingkaran luar logo WhatsApp */
+.gx-admin-link svg {
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  max-width: 26px !important;
+  max-height: 26px !important;
+  flex: 0 0 26px !important;
+  aspect-ratio: 1 / 1 !important;
+  overflow: visible !important;
+}
+
+
+/* Free Fire Like: tanpa warna gradasi */
+.profile-subtitle {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: initial !important;
+  color: inherit !important;
+}
+
+/* HALAMAN FREE, VIP, DAN RIWAYAT */
+.gx-extra-page {
+  display: none;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 460px;
+  margin: 30px auto 20px;
+  padding: 22px 16px;
+  border: 1px solid rgba(132, 147, 255, .7);
+  border-radius: 20px;
+  background: rgba(8, 8, 22, .88);
+  box-shadow: 0 0 18px rgba(96, 112, 255, .16);
+}
+.gx-extra-page.gx-page-active { display: block; }
+.gx-extra-page h2 {
+  margin-bottom: 8px;
+  text-align: center;
+  font-size: 23px;
+  font-weight: 900;
+  background: linear-gradient(90deg, #42a5ff, #9870ff, #c16bff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.gx-page-note {
+  margin: 0 0 18px;
+  color: #c9c9e8;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+.gx-form {
+  display: grid;
+  gap: 12px;
+}
+.gx-form label {
+  display: grid;
+  gap: 7px;
+  color: #d9dcff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.gx-form input, .gx-form select {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px;
+  border: 1px solid #565fa6;
+  border-radius: 12px;
+  background: #090a18;
+  color: #fff;
+  font: inherit;
+  outline: none;
+}
+.gx-form input:focus, .gx-form select:focus {
+  border-color: #a88bff;
+  box-shadow: 0 0 10px rgba(141, 119, 255, .2);
+}
+.gx-submit {
+  min-height: 48px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(100deg, #328cff, #7774ff, #a56aff);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+.gx-submit:disabled { opacity: .6; }
+.gx-message {
+  display: none;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #525b9a;
+  border-radius: 12px;
+  color: #e7e7ff;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.gx-history-list { display: grid; gap: 10px; margin-top: 12px; }
+.gx-history-item {
+  padding: 12px;
+  border: 1px solid #343b71;
+  border-radius: 12px;
+  background: rgba(28, 29, 65, .55);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.gx-history-item strong { color: #b9b5ff; }
+.gx-history-empty {
+  color: #b9b9d6;
+  text-align: center;
+  font-size: 12px;
+  padding: 14px 4px;
+}
+.gx-back-home {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 14px;
+  border: 1px solid #687be0;
+  border-radius: 12px;
+  background: rgba(77, 91, 180, .2);
+  color: #fff;
+  font-weight: 800;
+}
+
+
+/* Tombol musik GANZ X - OFC */
+#gx-music-box {
+  position: fixed;
+  top: 14px;
+  right: 17px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid rgba(139, 112, 255, .8);
+  border-radius: 9px;
+  background: rgba(15, 13, 35, .94);
+  box-shadow: 0 0 10px rgba(106, 76, 255, .18);
+
+  transform: translateY(15px);
+}
+#gx-music-box button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 6px;
+  background: #292044;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+#gx-music-box button:active { transform: scale(.94); }
+#gx-music-toggle {
+  background: linear-gradient(135deg, #243b8a, #713bd1) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,.85) !important;
+  box-shadow: 0 0 12px rgba(91, 70, 220, .65) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+
+
+/* Posisi final ikon dan teks VIP */
+#gx-bottom-nav .gx-nav-vip {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  padding: 4px 0 !important;
+  gap: 5px !important;
+}
+#gx-bottom-nav .gx-nav-vip svg {
+  display: block !important;
+  width: 23px !important;
+  height: 23px !important;
+  margin: 0 !important;
+  flex: 0 0 23px !important;
+  position: static !important;
+}
+#gx-bottom-nav .gx-nav-vip span {
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+  margin: 0 !important;
+}
+
+
+/* FINAL: ikon Love dan Mahkota lebih besar dan tepat di tengah */
+#gx-bottom-nav .gx-nav-free,
+#gx-bottom-nav .gx-nav-vip {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+#gx-bottom-nav .gx-nav-free svg,
+#gx-bottom-nav .gx-nav-vip svg {
+  display: block !important;
+  width: 30px !important;
+  height: 30px !important;
+  flex: 0 0 30px !important;
+  margin: 0 auto !important;
+  position: static !important;
+  transform: none !important;
+}
+
+#gx-bottom-nav .gx-nav-free span,
+#gx-bottom-nav .gx-nav-vip span {
+  display: none !important;
+}
+
+</style>
+</head>
+
+<body>
+<div id="space" aria-hidden="true">
+  <div id="stars"></div>
+</div>
+
+<main class="content" id="top">
+
+  <header class="profile-header">
+    <div class="profile">
+      <img src="/static/profil.jpg" alt="Foto profil Ganz X - OFC">
+    </div>
+    <div class="profile-info">
+      <div class="profile-name">Ganz X - OFC</div>
+      <div class="profile-subtitle">Free Fire Like</div>
+    </div>
+  </header>
+
+  <section id="gx-home">
+    <div id="gx-home-username" style="display:none;font-size:14px;font-weight:bold;margin-bottom:6px;color:#ffffff"></div>
+    <div style="display:flex;justify-content:center;margin:0 auto 18px;"><button id="gx-login-welcome-btn" type="button" style="display:block!important;padding:10px 28px;border:1px solid #8b70ff;border-radius:12px;background:linear-gradient(90deg,#387dff,#b34dff);color:white;font-weight:800;font-size:15px;">LOGIN</button></div>
+    <div class="gx-welcome">WELCOME TO</div>
+        <div class="gx-description">FREE FIRE LIKE</div>
+
+    <div class="gx-admin">
+      <a class="gx-admin-link"
+         href="https://wa.me/6285819385168"
+         target="_blank"
+         rel="noopener noreferrer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/>
+      <path d="M9.2 8.7c.2-.5.5-.5.8-.5h.6c.2 0 .4.1.5.4l.8 1.8c.1.2.1.4-.1.6l-.6.7c-.2.2-.2.4-.1.6.5 1 1.3 1.8 2.3 2.3.2.1.4.1.6-.1l.7-.6c.2-.2.4-.2.6-.1l1.8.8c.3.1.4.3.4.5v.6c0 .3 0 .6-.5.8-.5.2-1.2.3-1.8.1-1.3-.3-2.8-1.2-4.1-2.5s-2.2-2.8-2.5-4.1c-.2-.6-.1-1.3.1-1.8z"/>
+    </svg>
+        <span>BELI COINS 🪙</span>
+        <span class="gx-admin-arrow"></span>
+      </a>
+    </div>
+
+    <a
+      class="gx-wa-button"
+      href="https://whatsapp.com/channel/0029Vb8HNh7DeOMyrMwvQF3Y"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Buka Channel WhatsApp Ganz X OFC"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20.5 11.7a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.5-4.7a8.5 8.5 0 1 1 16-4.1Z"/>
+        <path d="M8.4 7.8c.2-.5.5-.5.8-.5h.5c.2 0 .4.1.5.4l.8 1.8c.1.2.1.4-.1.6l-.6.7c-.2.2-.2.4 0 .7.6 1 1.4 1.8 2.5 2.3.2.1.4.1.6-.1l.8-.9c.2-.2.4-.2.6-.1l1.7.8c.3.1.4.3.4.5 0 .4-.2 1-.6 1.3-.4.4-1.1.7-1.8.6-1-.1-2.3-.6-3.7-1.8-1.2-1-2.1-2.3-2.4-3.2-.4-1.1-.1-2.3.4-3.1Z"/>
+      </svg>
+      <span>CHANNEL WHATSAPP</span>
+    </a>
+
+    <div class="gx-signature">Ganz X - OFC</div>
+    <div class="gx-home-line"></div>
+
+
+    <div class="gx-extra-page" id="gx-home-history" style="display:block;margin-top:28px">
+<h2 style="text-align:center;margin-bottom:22px">HARGA COINS</h2>
+<div class="gx-history-list" id="gx-home-history-list">
+<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>5 COIN 🪙</strong><span>= 3.000</span></div>
+<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>10 COINS 🪙</strong><span>= 6.000</span></div>
+<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>15 COINS 🪙</strong><span>= 9.000</span></div>
+<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>20 COINS 🪙</strong><span>= 12.000</span></div>
+<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>25 COINS 🪙</strong><span>= 15.000</span></div>
+<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>30 COINS 🪙</strong><span>= 18.000</span></div>
+<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>35 COINS 🪙</strong><span>= 21.000</span></div>
+<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>40 COINS 🪙</strong><span>= 24.000</span></div>
+<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>45 COINS 🪙</strong><span>= 27.000</span></div>
+<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>50 COINS 🪙</strong><span>= 30.000</span></div>
+</div>
+<div class="gx-history-empty" style="margin-top:18px;line-height:1.7;text-align:center">📢 Sebelum membeli coins pastikan kamu sudah login terlebih dahulu, karena proses pengiriman coins akan di kirim melalui username ✅</div>
+</div>
+
+
+
+
+
+
+
+
+
+</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="gx-extra-page" id="gx-page-free">
+    <h2>LIKE +50</h2>
+    <form class="gx-form" data-service="free">
+      <label>UID
+        <input name="uid" inputmode="numeric" pattern="[0-9]{5,20}" minlength="5" maxlength="20" placeholder="Masukkan UID" required>
+      </label>
+      <label>REGION
+        <select name="region" required>
+          <option value="ID">ID</option>
+          <option value="BD">BD</option>
+          <option value="SG">SG</option>
+          <option value="TH">TH</option>
+          <option value="VN">VN</option>
+          <option value="BR">BR</option>
+          <option value="US">US</option>
+          <option value="EU">EU</option>
+          <option value="ME">ME</option>
+          <option value="PK">PK</option>
+          <option value="TW">TW</option>
+          <option value="IND">IND</option>
+        </select>
+      </label>
+      <button class="gx-submit" type="submit">KIRIM LIKE</button>
+    </form>
+    <div class="gx-message" role="status"></div>
+
+  </section>
+
+  <section class="gx-extra-page" id="gx-page-vip">
+    <h2>LIKE +220</h2>
+    <form class="gx-form" data-service="vip">
+      <label>UID
+        <input name="uid" inputmode="numeric" pattern="[0-9]{5,20}" minlength="5" maxlength="20" placeholder="Masukkan UID" required>
+      </label>
+      <label>REGION
+        <select name="region" required>
+          <option value="ID">ID</option>
+          <option value="BD">BD</option>
+          <option value="SG">SG</option>
+          <option value="TH">TH</option>
+          <option value="VN">VN</option>
+          <option value="BR">BR</option>
+          <option value="US">US</option>
+          <option value="EU">EU</option>
+          <option value="ME">ME</option>
+          <option value="PK">PK</option>
+          <option value="TW">TW</option>
+          <option value="IND">IND</option>
+        </select>
+      </label>
+      <button class="gx-submit" type="submit">KIRIM LIKE</button>
+    </form>
+    <div class="gx-message" role="status"></div>
+
+  </section>
+
+</main>
+
+<nav id="gx-bottom-nav" aria-label="Navigasi utama">
+  <button class="gx-nav-btn gx-nav-free" type="button" data-gx-page="free" aria-label="Like Free">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/>
+    </svg>
+    <span></span>
+  </button>
+
+  <button class="gx-nav-btn gx-nav-home" type="button" data-gx-page="home" aria-label="Home">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m3 10 9-7 9 7"/>
+      <path d="M5 9v12h14V9M9 21v-7h6v7"/>
+    </svg>
+  </button>
+
+  <button class="gx-nav-btn gx-nav-vip" type="button" data-gx-page="vip" aria-label="Like VIP">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="m2 7 5 4 5-8 5 8 5-4-2 12H4L2 7Z"/>
+      <path d="M4 22h16"/>
+    </svg>
+    <span></span>
+  </button>
+</nav>
+
+<script>
+(function () {
+  /* Membuat 260 bintang */
+  const layer = document.getElementById("stars");
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < 260; i++) {
+    const star = document.createElement("span");
+    star.className = "star";
+
+    const chance = Math.random();
+
+    if (chance > .94) {
+      star.classList.add("big");
+    } else if (chance > .76) {
+      star.classList.add("blue");
+    } else if (chance > .65) {
+      star.classList.add("purple");
+    } else {
+      star.classList.add("small");
+    }
+
+    const size = Math.random() * 1.8 + 1;
+    star.style.left = Math.random() * 100 + "%";
+    star.style.top = Math.random() * 100 + "%";
+    star.style.width = size + "px";
+    star.style.height = size + "px";
+    star.style.setProperty("--duration", (1 + Math.random() * 3) + "s");
+    star.style.setProperty("--delay", (-Math.random() * 4) + "s");
+
+    fragment.appendChild(star);
+  }
+
+  layer.appendChild(fragment);
+
+  /* Memulai website dari posisi paling atas */
+  if ("scrollRestoration" in history) {
+    history.scrollRestoration = "manual";
+  }
+
+  function goTop() {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }
+
+  window.addEventListener("load", function () {
+    requestAnimationFrame(goTop);
+  });
+
+  window.addEventListener("pageshow", function () {
+    requestAnimationFrame(goTop);
+  });
+
+
+  const API_BASE = "";
+  const home = document.getElementById("gx-home");
+  const freePage = document.getElementById("gx-page-free");
+  const vipPage = document.getElementById("gx-page-vip");
+  const homeHistory = document.getElementById("gx-home-history-list");
+  async function refreshCoins() {
+    const label = document.getElementById("gx-coin-label");
+    if (!label) return;
+
+    try {
+      const token = localStorage.getItem("gx_account_token") || "";
+      if (!token) {
+        label.textContent = "🪙 COINS : 0";
+        return;
+      }
+
+      const response = await fetch("/api/account", {
+        headers: { "X-Account-Token": token }
+      });
+      const data = await response.json();
+
+      if (response.ok && data.logged_in) {
+        label.textContent = "🪙 COINS : " + (data.coins ?? 0);
+      } else {
+        label.textContent = "🪙 COINS : 0";
+      }
+    } catch (_) {
+      label.textContent = "🪙 COINS : —";
+    }
+  }
+  let vipToken = "";
+
+  function getVipToken() {
+    try {
+      return sessionStorage.getItem("gx_vip_token") || "";
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function saveVipToken(token) {
+    vipToken = token || "";
+    try {
+      if (vipToken) {
+        sessionStorage.setItem("gx_vip_token", vipToken);
+      } else {
+        sessionStorage.removeItem("gx_vip_token");
+      }
+    } catch (_) {}
+  }
+
+  vipToken = getVipToken();
+
+
+  function askVipPassword() {
+    return new Promise(resolve => {
+      const overlay = document.createElement("div");
+      overlay.id = "gx-vip-login";
+      overlay.style.cssText = [
+        "position:fixed", "inset:0", "z-index:99999",
+        "display:flex", "align-items:center", "justify-content:center",
+        "padding:16px", "background:#080810",
+        "font-family:Arial,sans-serif", "color:white"
+      ].join(";");
+
+      overlay.innerHTML = `
+        <form id="gx-vip-login-form" style="
+          width:100%;max-width:360px;padding:24px 20px;
+          border:1px solid #7652ff;border-radius:16px;
+          background:#11101d;text-align:center">
+          <div style="position:relative;margin-bottom:12px;min-height:38px;display:flex;align-items:center;justify-content:center">
+            <button type="button" id="gx-vip-cancel" aria-label="Kembali" style="position:absolute;left:0;top:-5px;width:38px;height:38px;border:0;border-radius:10px;background:#39265f;color:#e0c5ff;font-size:30px;font-weight:bold;line-height:1;cursor:pointer;box-shadow:0 0 8px #9b4dca55">‹</button>
+            <h2 style="font-size:23px;margin:0;color:#a98cff;display:none">LIKE VIP</h2>
+          </div>
+          <div style="font-size:34px;margin-bottom:12px">🔐</div>
+          <p style="font-size:13px;color:#aaa;margin-bottom:22px">
+            Masukkan password untuk melanjutkan
+          </p>
+          <input id="gx-vip-password" type="password"
+            placeholder="Masukkan password"
+            autocomplete="current-password" required
+            style="width:100%;padding:14px;border-radius:10px;
+            border:1px solid #514174;background:#080810;
+            color:white;outline:none;font-size:15px;margin-bottom:14px">
+          <button type="submit" style="
+            width:100%;padding:14px;border:0;border-radius:10px;
+            color:white;font-weight:bold;font-size:15px;
+            background:#6548d8;
+            cursor:pointer">MASUK</button>
+          <p id="gx-vip-login-error" style="
+            color:#ff7373;font-size:12px;margin-top:12px;display:none"></p>
+        </form>`;
+
+      document.body.appendChild(overlay);
+      const input = overlay.querySelector("#gx-vip-password");
+      const form = overlay.querySelector("#gx-vip-login-form");
+      const error = overlay.querySelector("#gx-vip-login-error");
+      let finished = false;
+
+      function close(value) {
+        if (finished) return;
+        finished = true;
+        overlay.remove();
+        resolve(value);
+      }
+
+      overlay.querySelector("#gx-vip-cancel").onclick = () => close(null);
+      form.addEventListener("submit", event => {
+        event.preventDefault();
+        close(input.value);
+      });
+      requestAnimationFrame(() => input.focus());
+    });
+  }
+
+  async function showPage(page) {
+    home.style.display = page === "home" ? "" : "none";
+    freePage.classList.toggle("gx-page-active", page === "free");
+    vipPage.classList.toggle("gx-page-active", page === "vip");
+
+    if (page === "home") {
+      saveVipToken("");
+      refreshHistory();
+      refreshCoins();
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }
+
+  document.getElementById("gx-bottom-nav").addEventListener("click", function(event) {
+    const button = event.target.closest("[data-gx-page]");
+    if (!button) return;
+    showPage(button.dataset.gxPage);
+  });
+
+  document.querySelectorAll("[data-back-home]").forEach(button => {
+    button.addEventListener("click", () => showPage("home"));
+  });
+
+  function getSavedKey() {
+    try { return localStorage.getItem("gx_api_key") || ""; }
+    catch (_) { return ""; }
+  }
+
+  function saveKey(key) {
+    try { localStorage.setItem("gx_api_key", key); } catch (_) {}
+  }
+
+  document.querySelectorAll('input[name="apiKey"]').forEach(input => {
+    input.value = getSavedKey();
+    input.addEventListener("change", () => saveKey(input.value.trim()));
+  });
+
+  function escapeText(value) {
+    const div = document.createElement("div");
+    div.textContent = value == null ? "" : String(value);
+    return div.innerHTML;
+  }
+
+
+  function historyCard(item) {
+    const given = Number(item.likes_given ?? 0);
+    if (!Number.isFinite(given) || given <= 0) return "";
+
+    const fmt = value => value == null
+      ? "Belum diketahui"
+      : Number(value).toLocaleString("id-ID");
+
+    let waktu = "Waktu tidak diketahui";
+    if (item.created_at) {
+      const raw = String(item.created_at).trim();
+      const iso = raw.includes("T") ? raw : raw.replace(" ", "T");
+      const date = new Date(/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z");
+
+      if (!Number.isNaN(date.getTime())) {
+        waktu = new Intl.DateTimeFormat("id-ID", {
+          timeZone: "Asia/Jakarta",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hourCycle: "h23"
+        }).format(date) + " WIB";
+      } else {
+        waktu = escapeText(raw);
+      }
+    }
+
+    return `<div style="padding:10px;margin-top:8px;border:1px solid #494276;border-radius:10px;background:rgba(10,8,28,.65);overflow-wrap:anywhere">
+      <div style="font-weight:800;color:#a9baff">🆔 UID: ${escapeText(item.uid ?? "-")}</div>
+      <div>🌍 Region: ${escapeText(item.region ?? "-")}</div>
+      <div>❤️ Like sebelum: ${fmt(item.likes_before)}</div>
+      <div>💗 Like sesudah: ${fmt(item.likes_after)}</div>
+      <div style="color:#35df91;font-weight:800">🎁 Bertambah: +${fmt(given)}</div>
+      <div style="font-size:11px;opacity:.85;margin-top:6px">🕒 ${waktu}</div>
+    </div>`;
+  }
+
+  async function refreshHistory() {
+    if (!homeHistory) return;
+    const rows = [];
+    for (let coins = 5; coins <= 50; coins += 5) {
+      const price = (coins / 5 * 3000).toLocaleString("id-ID");
+      const label = coins === 5 ? "COIN" : "COINS";
+      rows.push(`<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>${coins} ${label} 🪙</strong><span>= ${price}</span></div>`);
+    }
+    homeHistory.innerHTML = rows.join("");
+  }
+
+  refreshHistory();
+
+})();
+</script>
+
+<div id="gx-coin-label" style="position:fixed;top:36px;right:68px;z-index:10000;padding:7px 10px;border:1px solid #8b70ff;border-radius:9px;background:rgba(15,13,35,.96);color:#fff;font-size:12px;font-weight:800;">🪙 COINS : 0</div>
+<div id="gx-music-box" aria-label="Kontrol musik">
+  <button id="gx-music-toggle" type="button" aria-label="Putar atau jeda musik" title="Putar / jeda"><span id="gx-music-icon" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fff !important;-webkit-text-fill-color:#fff !important;font-size:1.1em;line-height:1;margin:0;padding:0;transform:translateX(2px);"></span></button>
+</div>
+<audio id="gx-music-audio" preload="none" loop>
+  <source src="/static/music/nenekku-pahlawanku.mp3" type="audio/mpeg">
+</audio>
+<script>
+(() => {
+  const audio = document.getElementById('gx-music-audio');
+  const toggle = document.getElementById('gx-music-toggle');
+  const play = null;
+  if (!audio || !toggle) return;
+
+  async function toggleMusic() {
+    if (audio.paused) {
+      try {
+        await audio.play();
+      } catch (e) {
+        toggle.title = 'Tekan lagi untuk memutar musik';
+      }
+    } else {
+      audio.pause();
+    }
+    updateButtons();
+  }
+
+  function updateButtons() {
+    const icon = document.getElementById('gx-music-icon');
+    if (!icon) return;
+    const paused = audio.paused;
+    icon.textContent = paused ? '▶' : '| |';
+    icon.style.setProperty('color', '#ffffff', 'important');
+    icon.style.setProperty('-webkit-text-fill-color', '#ffffff', 'important');
+    icon.style.setProperty('transform', paused ? 'translateX(1px)' : 'translateX(0px)', 'important');
+  }
+
+  toggle.addEventListener('click', toggleMusic);
+  play?.addEventListener('click', toggleMusic);
+  audio.addEventListener('play', updateButtons);
+  audio.addEventListener('pause', updateButtons);
+  updateButtons();
+})();
+</script>
+
+<script src="/static/account-ui.js"></script>
+</body>
+</html>
