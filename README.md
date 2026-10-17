@@ -1,0 +1,2 @@
+# Ganz-X-OFC
+LIKE FREE FIRE
