@@ -15,7 +15,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY") or secrets.token_hex(32)
 DB = os.path.join(os.path.dirname(__file__), "ganzx.db")
 API20_URL = os.getenv("LIKE_API_URL", "https://two0likeapifreebyzexxyh4x.onrender.com/like")
 API20_KEY = os.getenv("LIKE_API_KEY", "")
-API220_URL = "https://silent-codex-api.shop/like"
+API220_URL = "https://www.silent-codex-api.shop/like"
 from dotenv import load_dotenv
 load_dotenv()
 API50_URL = "https://www.silent-codex-api.shop/like"
