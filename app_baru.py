@@ -202,6 +202,9 @@ def send_like(account):
         before = item.get("LikesbeforeCommand", item.get("LikesBeforeCommand", item.get("likes_before")))
         after = item.get("LikesafterCommand", item.get("LikesAfterCommand", item.get("likes_after")))
         nickname = item.get("PlayerNickname") or item.get("player_nickname") or item.get("nickname")
+        print("[LIKE-DIAG] service=", service, "http=", response.status_code, flush=True)
+        print("[LIKE-DIAG] response_fields=", list(item.keys()) if isinstance(item, dict) else type(item).__name__, flush=True)
+        print("[LIKE-DIAG] given=", given, "before=", before, "after=", after, flush=True)
 
         try:
             given_num = int(given) if given is not None else 0
