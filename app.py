@@ -247,6 +247,7 @@ def send_like(account):
             "coins_spent": cost, "message": "Like berhasil dikirim."
         })
     except (requests.RequestException, RuntimeError) as exc:
+        print("[LIKE-ERROR] service=", service, "error=", repr(exc), flush=True)
         with db_connect() as db:
             db.execute("UPDATE accounts SET coins=coins+? WHERE id=?", (cost, account["id"]))
         return jsonify({"ok": False, "message": str(exc), "coins_refunded": True}), 502
