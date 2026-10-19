@@ -196,7 +196,8 @@ def send_like(account):
         except ValueError:
             raise RuntimeError("Respons API bukan JSON.")
         if not response.ok:
-            raise RuntimeError("Penyedia API menolak permintaan.")
+            print("[LIKE-API-REJECT] http=", response.status_code, "body=", response.text[:300], flush=True)
+            raise RuntimeError("Penyedia API menolak permintaan (HTTP " + str(response.status_code) + ").")
         item = result[0] if isinstance(result, list) and result and isinstance(result[0], dict) else result if isinstance(result, dict) else {}
         given = item.get("LikesGivenByAPI")
         before = item.get("LikesbeforeCommand", item.get("LikesBeforeCommand", item.get("likes_before")))
@@ -232,10 +233,11 @@ def send_like(account):
         with db_connect() as db:
             db.execute("""
                 INSERT INTO like_history
-                (account_id, service, uid, region, status, likes_given,
+                (key_hash, account_id, service, uid, region, status, likes_given,
                  likes_before, likes_after, message)
-                VALUES (?, ?, ?, ?, 'success', ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, 'success', ?, ?, ?, ?)
             """, (
+                __import__("hashlib").sha256(str(account["id"]).encode()).hexdigest(),
                 account["id"], service, uid, display_region, given_num,
                 before_num, after_num, "Like berhasil dikirim."
             ))
