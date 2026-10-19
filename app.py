@@ -206,6 +206,7 @@ def send_like(account):
         print("[LIKE-DIAG] service=", service, "http=", response.status_code, flush=True)
         print("[LIKE-DIAG] response_fields=", list(item.keys()) if isinstance(item, dict) else type(item).__name__, flush=True)
         print("[LIKE-DIAG] given=", given, "before=", before, "after=", after, flush=True)
+        print("[LIKE-DIAG] nickname=", nickname, "status=", item.get("status"), "key_limit=", item.get("KEY LIMIT"), "region=", item.get("PlayerRegion"), flush=True)
 
         try:
             given_num = int(given) if given is not None else 0
