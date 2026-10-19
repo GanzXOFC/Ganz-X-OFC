@@ -229,7 +229,7 @@ def send_like(account):
                 "likes_before": before, "likes_after": after,
                 "coins_refunded": True,
                 "message": "LIKE VIP GAGAL: like diberikan 0 atau jumlah like tidak bertambah. Koin dikembalikan."
-            }), 502
+            }), 409
 
         with db_connect() as db:
             db.execute("""
