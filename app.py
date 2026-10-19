@@ -58,6 +58,9 @@ def init_db():
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(account_id) REFERENCES accounts(id)
         )""")
+        columns = {row[1] for row in db.execute("PRAGMA table_info(like_history)").fetchall()}
+        if "key_hash" not in columns:
+            db.execute("ALTER TABLE like_history ADD COLUMN key_hash TEXT")
 
 def current_account():
     token = request.headers.get("X-Account-Token", "")
