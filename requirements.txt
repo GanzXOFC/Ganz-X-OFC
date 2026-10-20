@@ -2,3 +2,5 @@ Flask
 requests
 python-dotenv
 gunicorn
+
+psycopg[binary]

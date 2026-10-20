@@ -1,5 +1,6 @@
 import os
-import sqlite3
+import psycopg
+from psycopg.rows import dict_row
 import secrets
 import requests
 from functools import wraps
@@ -12,7 +13,7 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or secrets.token_hex(32)
 
-DB = os.path.join(os.path.dirname(__file__), "ganzx.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 API20_URL = os.getenv("LIKE_API_URL", "https://two0likeapifreebyzexxyh4x.onrender.com/like")
 API20_KEY = os.getenv("LIKE_API_KEY", "")
 API220_URL = "https://www.silent-codex-api.shop/like"
@@ -25,42 +26,48 @@ ADMIN_KEY = os.getenv("ADMIN_KEY", "")
 WA_ADMIN = "6285819385168"
 
 def db_connect():
-    db = sqlite3.connect(DB, timeout=15)
-    db.row_factory = sqlite3.Row
-    return db
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL belum disetel.")
+    return psycopg.connect(DATABASE_URL, row_factory=dict_row)
 
 def init_db():
     with db_connect() as db:
-        db.execute("""CREATE TABLE IF NOT EXISTS accounts(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE COLLATE NOCASE NOT NULL,
-            password_hash TEXT NOT NULL,
-            coins INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )""")
-        db.execute("""CREATE TABLE IF NOT EXISTS account_sessions(
-            token TEXT PRIMARY KEY,
-            account_id INTEGER NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(account_id) REFERENCES accounts(id)
-        )""")
-        db.execute("""CREATE TABLE IF NOT EXISTS like_history(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            account_id INTEGER NOT NULL,
-            service TEXT NOT NULL,
-            uid TEXT NOT NULL,
-            region TEXT,
-            status TEXT NOT NULL DEFAULT 'success',
-            likes_given INTEGER NOT NULL DEFAULT 0,
-            likes_before INTEGER,
-            likes_after INTEGER,
-            message TEXT,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(account_id) REFERENCES accounts(id)
-        )""")
-        columns = {row[1] for row in db.execute("PRAGMA table_info(like_history)").fetchall()}
-        if "key_hash" not in columns:
-            db.execute("ALTER TABLE like_history ADD COLUMN key_hash TEXT")
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS accounts (
+                id BIGSERIAL PRIMARY KEY,
+                username TEXT NOT NULL,
+                password_hash TEXT NOT NULL,
+                coins BIGINT NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS accounts_username_lower_idx
+            ON accounts (LOWER(username))
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS account_sessions (
+                token TEXT PRIMARY KEY,
+                account_id BIGINT NOT NULL REFERENCES accounts(id),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS like_history (
+                id BIGSERIAL PRIMARY KEY,
+                account_id BIGINT NOT NULL REFERENCES accounts(id),
+                service TEXT NOT NULL,
+                uid TEXT NOT NULL,
+                region TEXT,
+                status TEXT NOT NULL DEFAULT 'success',
+                likes_given BIGINT NOT NULL DEFAULT 0,
+                likes_before BIGINT,
+                likes_after BIGINT,
+                message TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                key_hash TEXT
+            )
+        """)
 
 def current_account():
     token = request.headers.get("X-Account-Token", "")
@@ -70,7 +77,7 @@ def current_account():
         return db.execute("""
             SELECT a.id, a.username, a.coins
             FROM account_sessions s JOIN accounts a ON a.id=s.account_id
-            WHERE s.token=?
+            WHERE s.token=%s
         """, (token,)).fetchone()
 
 def login_required(fn):
@@ -103,14 +110,14 @@ def register():
     try:
         with db_connect() as db:
             cur = db.execute(
-                "INSERT INTO accounts(username,password_hash,coins) VALUES(?,?,0)",
+                "INSERT INTO accounts(username,password_hash,coins) VALUES(%s,%s,0) RETURNING id",
                 (username, generate_password_hash(password))
             )
-            account_id = cur.lastrowid
+            account_id = cur.fetchone()["id"]
             token = secrets.token_urlsafe(32)
-            db.execute("INSERT INTO account_sessions(token,account_id) VALUES(?,?)", (token, account_id))
+            db.execute("INSERT INTO account_sessions(token,account_id) VALUES(%s,%s)", (token, account_id))
         return jsonify({"ok": True, "token": token, "username": username, "coins": 0})
-    except sqlite3.IntegrityError:
+    except psycopg.IntegrityError:
         return jsonify({"ok": False, "message": "Username sudah dipakai."}), 409
 
 @app.post("/api/login")
@@ -119,11 +126,11 @@ def login():
     username = str(data.get("username", "")).strip()
     password = str(data.get("password", ""))
     with db_connect() as db:
-        row = db.execute("SELECT * FROM accounts WHERE username=? COLLATE NOCASE", (username,)).fetchone()
+        row = db.execute("SELECT * FROM accounts WHERE LOWER(username)=LOWER(%s)", (username,)).fetchone()
         if not row or not check_password_hash(row["password_hash"], password):
             return jsonify({"ok": False, "message": "Username atau password salah."}), 401
         token = secrets.token_urlsafe(32)
-        db.execute("INSERT INTO account_sessions(token,account_id) VALUES(?,?)", (token, row["id"]))
+        db.execute("INSERT INTO account_sessions(token,account_id) VALUES(%s,%s)", (token, row["id"]))
     return jsonify({"ok": True, "token": token, "username": row["username"], "coins": row["coins"]})
 
 @app.post("/api/logout")
@@ -131,7 +138,7 @@ def login():
 def logout(account):
     token = request.headers.get("X-Account-Token", "")
     with db_connect() as db:
-        db.execute("DELETE FROM account_sessions WHERE token=?", (token,))
+        db.execute("DELETE FROM account_sessions WHERE token=%s", (token,))
     return jsonify({"ok": True})
 
 @app.get("/api/coins")
@@ -152,10 +159,10 @@ def admin_add_coins():
     if amount <= 0 or amount > 1000000:
         return jsonify({"ok": False, "message": "Jumlah coin tidak valid."}), 400
     with db_connect() as db:
-        cur = db.execute("UPDATE accounts SET coins=coins+? WHERE username=? COLLATE NOCASE", (amount, username))
+        cur = db.execute("UPDATE accounts SET coins=coins+%s WHERE LOWER(username)=LOWER(%s)", (amount, username))
         if cur.rowcount == 0:
             return jsonify({"ok": False, "message": "Username tidak ditemukan."}), 404
-        row = db.execute("SELECT username,coins FROM accounts WHERE username=? COLLATE NOCASE", (username,)).fetchone()
+        row = db.execute("SELECT username,coins FROM accounts WHERE LOWER(username)=LOWER(%s)", (username,)).fetchone()
     return jsonify({"ok": True, "username": row["username"], "coins": row["coins"]})
 
 @app.get("/api/buy-coins")
@@ -180,7 +187,7 @@ def send_like(account):
     cost = 1 if service == "free" else 5
     # Reserve coin atomically so simultaneous requests cannot spend the same balance.
     with db_connect() as db:
-        cur = db.execute("UPDATE accounts SET coins=coins-? WHERE id=? AND coins>=?", (cost, account["id"], cost))
+        cur = db.execute("UPDATE accounts SET coins=coins-%s WHERE id=%s AND coins>=%s", (cost, account["id"], cost))
         if cur.rowcount != 1:
             return jsonify({"ok": False, "message": "Coin tidak cukup. Beli coin melalui WhatsApp."}), 402
 
@@ -225,7 +232,7 @@ def send_like(account):
         increased = before_num is not None and after_num is not None and after_num > before_num
         if given_num <= 0 or not increased:
             with db_connect() as db:
-                db.execute("UPDATE accounts SET coins=coins+? WHERE id=?", (cost, account["id"]))
+                db.execute("UPDATE accounts SET coins=coins+%s WHERE id=%s", (cost, account["id"]))
             return jsonify({
                 "ok": False, "service": service, "likes_given": 0,
                 "nickname": nickname, "uid": uid, "region": display_region,
@@ -239,7 +246,7 @@ def send_like(account):
                 INSERT INTO like_history
                 (key_hash, account_id, service, uid, region, status, likes_given,
                  likes_before, likes_after, message)
-                VALUES (?, ?, ?, ?, ?, 'success', ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, 'success', %s, %s, %s, %s)
             """, (
                 __import__("hashlib").sha256(str(account["id"]).encode()).hexdigest(),
                 account["id"], service, uid, display_region, given_num,
@@ -255,7 +262,7 @@ def send_like(account):
     except (requests.RequestException, RuntimeError) as exc:
         print("[LIKE-ERROR] service=", service, "type=", type(exc).__name__, "message=", str(exc), "http=", getattr(locals().get("response"), "status_code", "none"), flush=True)
         with db_connect() as db:
-            db.execute("UPDATE accounts SET coins=coins+? WHERE id=?", (cost, account["id"]))
+            db.execute("UPDATE accounts SET coins=coins+%s WHERE id=%s", (cost, account["id"]))
         return jsonify({"ok": False, "message": str(exc), "coins_refunded": True}), 502
 
 
@@ -267,7 +274,7 @@ def like_history(account):
             SELECT id, service, uid, region, status, likes_given,
                    likes_before, likes_after, message, created_at
             FROM like_history
-            WHERE account_id = ? AND likes_given > 0
+            WHERE account_id = %s AND likes_given > 0
             ORDER BY id DESC
             LIMIT 50
         """, (account["id"],)).fetchall()
