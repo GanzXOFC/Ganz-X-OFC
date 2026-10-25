@@ -806,6 +806,11 @@ body {
 }
 
 </style>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#080d1c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 </head>
 
 <body>
@@ -1289,5 +1294,13 @@ body {
 </script>
 
 <script src="/static/account-ui.js?v=2"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js")
+      .catch(err => console.warn("PWA SW:", err));
+  });
+}
+</script>
 </body>
 </html>

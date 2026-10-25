@@ -280,6 +280,31 @@ def like_history(account):
         """, (account["id"],)).fetchall()
     return jsonify([dict(row) for row in rows])
 
+@app.get("/manifest.json")
+def pwa_manifest():
+    from flask import send_from_directory
+    response = send_from_directory(
+        os.path.dirname(os.path.abspath(__file__)),
+        "manifest.json",
+        mimetype="application/manifest+json"
+    )
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+@app.get("/sw.js")
+def pwa_service_worker():
+    from flask import send_from_directory
+    response = send_from_directory(
+        os.path.dirname(os.path.abspath(__file__)),
+        "sw.js",
+        mimetype="application/javascript"
+    )
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
 @app.get("/")
 def home_page():
     from flask import send_from_directory
