@@ -74,6 +74,7 @@
     if (!res.ok) {
     const err = new Error(data.error || data.message || `HTTP ${res.status}`);
     err.data = data;
+    err.status = res.status;
     throw err;
   }
     return data;
@@ -112,12 +113,16 @@
     }
     try {
       updateAccount(await api("/api/account"));
-    } catch (_) {
-      token = "";
-      localStorage.removeItem("gx_account_token");
-      account = null;
-      updateWelcomeLoginButton();
-      accountBtn.textContent = "";
+    } catch (err) {
+      if (err.status === 401) {
+        token = "";
+        localStorage.removeItem("gx_account_token");
+        account = null;
+        updateWelcomeLoginButton();
+        accountBtn.textContent = "";
+      } else {
+        accountBtn.textContent = "👤 Akun tersimpan · koneksi terganggu";
+      }
     }
   }
 
@@ -188,7 +193,7 @@
   // Tangkap submit lebih awal agar handler lama tidak mengirim request ganda.
   document.addEventListener("submit", async event => {
     const form = event.target.closest(".gx-form");
-    if (!form || !["free", "vip"].includes(form.dataset.service)) return;
+    if (!form || !["free", "vip", "like20"].includes(form.dataset.service)) return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
