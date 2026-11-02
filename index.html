@@ -871,10 +871,6 @@ body {
       style="display:block;width:fit-content;min-width:190px;max-width:none;margin:12px auto 20px;padding:12px 28px;border:1px solid #806cff;border-radius:12px;background:linear-gradient(90deg,#3158b8,#8b45c5);color:white;font-weight:900;font-size:14px;cursor:pointer;">
       📜 RIWAYAT LIKE
     </button>
-    <div id="gx-history-panel" style="display:none;margin:12px auto 22px;padding:14px;border:1px solid #494276;border-radius:14px;background:rgba(10,8,28,.85);color:white;">
-      <h2 style="text-align:center;margin:4px 0 14px;color:#a9baff;">RIWAYAT LIKE</h2>
-      <div id="gx-history-results"></div>
-    </div>
 
     <div class="gx-signature">Ganz X - OFC</div>
     <div class="gx-home-line"></div>
@@ -1079,6 +1075,7 @@ body {
   const like20Page = document.getElementById("gx-page-like20");
   const vipPage = document.getElementById("gx-page-vip");
   const homeHistory = document.getElementById("gx-home-history-list");
+  let historyPage = null;
   async function refreshCoins() {
     const label = document.getElementById("gx-coin-label");
     if (!label) return;
@@ -1191,6 +1188,7 @@ body {
 
   async function showPage(page) {
     home.style.display = page === "home" ? "" : "none";
+    if (historyPage) historyPage.style.display = page === "history" ? "block" : "none";
     freePage.classList.toggle("gx-page-active", page === "free");
     like20Page.classList.toggle("gx-page-active", page === "like20");
     vipPage.classList.toggle("gx-page-active", page === "vip");
@@ -1275,22 +1273,45 @@ body {
   }
 
   const historyButton = document.getElementById("gx-history-button");
-  const historyPanel = document.getElementById("gx-history-panel");
-  const historyResults = document.getElementById("gx-history-results");
 
-  if (historyButton && historyPanel && historyResults) {
+  historyPage = document.createElement("section");
+  historyPage.id = "gx-page-history";
+  historyPage.style.cssText = "display:none;min-height:70vh;max-width:900px;margin:18px auto 120px;padding:16px;border:1px solid #494276;border-radius:18px;background:rgba(10,8,28,.94);color:white;box-sizing:border-box;";
+  historyPage.innerHTML = `
+    <button id="gx-history-back" type="button" style="display:block;margin:0 auto 16px;padding:10px 22px;border:1px solid #806cff;border-radius:11px;background:linear-gradient(90deg,#3158b8,#8b45c5);color:white;font-weight:900;font-size:13px;">← KEMBALI</button>
+    <h2 style="text-align:center;margin:8px 0 18px;color:#a9baff;">📜 RIWAYAT LIKE</h2>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:start;">
+      <div style="min-width:0;">
+        <h3 style="text-align:center;color:#8ebaff;font-size:16px;margin:4px 0 10px;">LIKE +50</h3>
+        <div id="gx-history-free"></div>
+      </div>
+      <div style="min-width:0;">
+        <h3 style="text-align:center;color:#c6a0ff;font-size:16px;margin:4px 0 10px;">LIKE +220</h3>
+        <div id="gx-history-vip"></div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:11px;opacity:.7;margin-top:18px;">Waktu ditampilkan dalam WIB</p>
+  `;
+  document.body.appendChild(historyPage);
+
+  const historyFree = historyPage.querySelector("#gx-history-free");
+  const historyVip = historyPage.querySelector("#gx-history-vip");
+  historyPage.querySelector("#gx-history-back").addEventListener("click", () => showPage("home"));
+
+  if (historyButton) {
     historyButton.addEventListener("click", async () => {
-      const opening = historyPanel.style.display === "none";
-      historyPanel.style.display = opening ? "block" : "none";
-      if (!opening) return;
+      showPage("history");
 
       const token = localStorage.getItem("gx_account_token") || "";
       if (!token) {
-        historyResults.textContent = "Silakan login terlebih dahulu untuk melihat riwayat LIKE.";
+        historyFree.textContent = "Silakan login terlebih dahulu.";
+        historyVip.textContent = "Silakan login terlebih dahulu.";
         return;
       }
 
-      historyResults.textContent = "Memuat riwayat LIKE...";
+      historyFree.textContent = "Memuat...";
+      historyVip.textContent = "Memuat...";
+
       try {
         const response = await fetch("/api/history", {
           headers: { "X-Account-Token": token }
@@ -1298,15 +1319,22 @@ body {
         const data = await response.json();
 
         if (!response.ok) {
-          historyResults.textContent = data.message || "Gagal mengambil riwayat.";
+          const msg = escapeText(data.message || "Gagal mengambil riwayat.");
+          historyFree.innerHTML = msg;
+          historyVip.innerHTML = msg;
           return;
         }
 
-        historyResults.innerHTML = Array.isArray(data) && data.length
-          ? data.map(historyCard).join("")
-          : '<div class="gx-history-empty" style="text-align:center;padding:12px;">Belum ada riwayat LIKE berhasil.</div>';
+        const rows = Array.isArray(data) ? data : [];
+        const freeRows = rows.filter(item => String(item.service || "").toLowerCase() === "free");
+        const vipRows = rows.filter(item => String(item.service || "").toLowerCase() === "vip");
+        const empty = '<p style="text-align:center;font-size:11px;opacity:.75;padding:8px 2px;">Belum ada riwayat.</p>';
+
+        historyFree.innerHTML = freeRows.length ? freeRows.map(historyCard).join("") : empty;
+        historyVip.innerHTML = vipRows.length ? vipRows.map(historyCard).join("") : empty;
       } catch (_) {
-        historyResults.textContent = "Koneksi gagal. Silakan coba lagi.";
+        historyFree.textContent = "Koneksi gagal. Coba lagi.";
+        historyVip.textContent = "Koneksi gagal. Coba lagi.";
       }
     });
   }
