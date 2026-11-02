@@ -1262,13 +1262,13 @@ body {
       }
     }
 
-    return `<div style="display:block;box-sizing:border-box;width:100%;padding:11px;margin:8px 0;border:1px solid #7165a8;border-radius:11px;background:#17132d;color:#ffffff!important;font-size:12px;line-height:1.7;text-align:left;overflow-wrap:anywhere;opacity:1;">
-      <div style="color:#ffffff!important;font-weight:900;">🆔 UID: ${escapeText(item.uid ?? "-")}</div>
-      <div style="color:#ffffff!important;">🌍 Region: ${escapeText(item.region ?? "-")}</div>
-      <div style="color:#ffffff!important;">❤️ Like sebelum: ${fmt(item.likes_before)}</div>
-      <div style="color:#ffffff!important;">💗 Like sesudah: ${fmt(item.likes_after)}</div>
-      <div style="color:#42f5a1!important;font-weight:900;">🎁 Bertambah: +${fmt(given)}</div>
-      <div style="color:#c9c3e8!important;font-size:10px;margin-top:7px;">🕒 ${waktu}</div>
+    return `<div style="display:block;box-sizing:border-box;width:100%;padding:11px;margin:8px 0;border:1px solid #7165a8;border-radius:11px;background:#17132d;color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;font-size:12px;line-height:1.7;text-align:left;overflow-wrap:anywhere;opacity:1;">
+      <div style="color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;font-weight:900;">🆔 UID: ${escapeText(item.uid ?? "-")}</div>
+      <div style="color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;">🌍 Region: ${escapeText(item.region ?? "-")}</div>
+      <div style="color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;">❤️ Like sebelum: ${fmt(item.likes_before)}</div>
+      <div style="color:#ffffff!important;-webkit-text-fill-color:#ffffff!important;">💗 Like sesudah: ${fmt(item.likes_after)}</div>
+      <div style="color:#42f5a1!important;-webkit-text-fill-color:#42f5a1!important;font-weight:900;">🎁 Bertambah: +${fmt(given)}</div>
+      <div style="color:#c9c3e8!important;-webkit-text-fill-color:#c9c3e8!important;font-size:10px;margin-top:7px;">🕒 ${waktu}</div>
     </div>`;
   }
 
