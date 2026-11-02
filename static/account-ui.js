@@ -299,6 +299,36 @@ ${given > 0 ? "" : "\n📢 LIKE DIBERIKAN 0 — COINS DIKEMBALIKAN ✅"}`
     }
   }, true);
 
+
+  const redeemButton = document.createElement("button");
+  redeemButton.id = "gx-redeem-button";
+  redeemButton.type = "button";
+  redeemButton.textContent = "🎁 KODE REDEEM";
+  redeemButton.style.cssText = "display:block;width:100%;max-width:420px;margin:12px auto 20px;padding:13px;border:1px solid #8b70ff;border-radius:12px;background:linear-gradient(90deg,#253d91,#7138a8);color:white;font-weight:900;font-size:14px;cursor:pointer;";
+  const buyArea = document.querySelector(".gx-admin");
+  if (buyArea) buyArea.insertAdjacentElement("afterend", redeemButton);
+
+  redeemButton.addEventListener("click", async () => {
+    if (!token) {
+      showModal("login");
+      message("Login terlebih dahulu untuk menggunakan kode redeem.");
+      return;
+    }
+    const code = prompt("Masukkan kode redeem 8 huruf:");
+    if (code === null) return;
+    redeemButton.disabled = true;
+    try {
+      const result = await api("/api/redeem", {code: code.trim().toUpperCase()});
+      alert(result.message || "Redeem berhasil!");
+      await refreshAccount();
+    } catch (e) {
+      const d = e.data || {};
+      alert(d.message || d.error || e.message || "Kode redeem gagal.");
+    } finally {
+      redeemButton.disabled = false;
+    }
+  });
+
   document.addEventListener("click", event => {
     const buy = event.target.closest("#gx-buy-coins, .gx-buy-coins");
     if (buy) {

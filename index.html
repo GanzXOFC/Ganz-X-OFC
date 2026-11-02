@@ -811,6 +811,17 @@ body {
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
+<style>
+#gx-bottom-nav {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+.gx-nav-like20 {
+  color: #65d9ff !important;
+}
+</style>
+
 </head>
 
 <body>
@@ -926,6 +937,34 @@ body {
 
   </section>
 
+  <section class="gx-extra-page" id="gx-page-like20">
+    <h2>LIKE +20</h2>
+    <form class="gx-form" data-service="like20">
+      <label>UID
+        <input name="uid" inputmode="numeric" pattern="[0-9]{5,20}" minlength="5" maxlength="20" placeholder="Masukkan UID" required>
+      </label>
+      <label>REGION
+        <select name="region" required>
+          <option value="ID">ID</option>
+          <option value="BD">BD</option>
+          <option value="SG">SG</option>
+          <option value="TH">TH</option>
+          <option value="VN">VN</option>
+          <option value="BR">BR</option>
+          <option value="US">US</option>
+          <option value="EU">EU</option>
+          <option value="ME">ME</option>
+          <option value="PK">PK</option>
+          <option value="TW">TW</option>
+          <option value="IND">IND</option>
+        </select>
+      </label>
+      <button class="gx-submit" type="submit">KIRIM LIKE</button>
+    </form>
+    <div class="gx-message" role="status"></div>
+
+  </section>
+
   <section class="gx-extra-page" id="gx-page-vip">
     <h2>LIKE +220</h2>
     <form class="gx-form" data-service="vip">
@@ -957,6 +996,7 @@ body {
 </main>
 
 <nav id="gx-bottom-nav" aria-label="Navigasi utama">
+  <button class="gx-nav-btn gx-nav-like20" type="button" data-gx-page="like20" aria-label="Like +20"><span>+20</span></button>
   <button class="gx-nav-btn gx-nav-free" type="button" data-gx-page="free" aria-label="Like Free">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/>
@@ -1036,6 +1076,7 @@ body {
   const API_BASE = "";
   const home = document.getElementById("gx-home");
   const freePage = document.getElementById("gx-page-free");
+  const like20Page = document.getElementById("gx-page-like20");
   const vipPage = document.getElementById("gx-page-vip");
   const homeHistory = document.getElementById("gx-home-history-list");
   async function refreshCoins() {
@@ -1151,6 +1192,7 @@ body {
   async function showPage(page) {
     home.style.display = page === "home" ? "" : "none";
     freePage.classList.toggle("gx-page-active", page === "free");
+    like20Page.classList.toggle("gx-page-active", page === "like20");
     vipPage.classList.toggle("gx-page-active", page === "vip");
 
     if (page === "home") {
@@ -1293,7 +1335,7 @@ body {
 })();
 </script>
 
-<script src="/static/account-ui.js?v=2"></script>
+<script src="/static/account-ui.js?v=3"></script>
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

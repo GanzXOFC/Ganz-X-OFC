@@ -69,6 +69,27 @@ def init_db():
             )
         """)
 
+
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS redeem_codes (
+                code TEXT PRIMARY KEY,
+                coins BIGINT NOT NULL CHECK(coins > 0),
+                max_uses INT NOT NULL CHECK(max_uses > 0),
+                used_count INT NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS redeem_redemptions (
+                id BIGSERIAL PRIMARY KEY,
+                code TEXT NOT NULL REFERENCES redeem_codes(code),
+                account_id BIGINT NOT NULL REFERENCES accounts(id),
+                redeemed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(code, account_id)
+            )
+        """)
+
+
 def current_account():
     token = request.headers.get("X-Account-Token", "")
     if not token:
@@ -165,6 +186,101 @@ def admin_add_coins():
         row = db.execute("SELECT username,coins FROM accounts WHERE LOWER(username)=LOWER(%s)", (username,)).fetchone()
     return jsonify({"ok": True, "username": row["username"], "coins": row["coins"]})
 
+
+@app.post("/admin/create-redeem-codes")
+def admin_create_redeem_codes():
+    if not ADMIN_KEY or not secrets.compare_digest(
+        request.headers.get("X-Admin-Key", ""), ADMIN_KEY
+    ):
+        return jsonify({"ok": False, "message": "Akses admin ditolak."}), 403
+
+    data = request.get_json(silent=True) or {}
+    try:
+        amount = int(data.get("amount", 0))
+        quantity = int(data.get("quantity", 0))
+        max_uses = int(data.get("max_uses", 0))
+    except (ValueError, TypeError):
+        return jsonify({"ok": False, "message": "Masukkan angka yang benar."}), 400
+
+    if not 1 <= amount <= 1000000:
+        return jsonify({"ok": False, "message": "Coins harus 1–1.000.000."}), 400
+    if not 1 <= quantity <= 100:
+        return jsonify({"ok": False, "message": "Jumlah kode harus 1–100."}), 400
+    if not 1 <= max_uses <= 100000:
+        return jsonify({"ok": False, "message": "Batas pemakai harus 1–100.000."}), 400
+
+    codes = []
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    with db_connect() as db:
+        while len(codes) < quantity:
+            code = "".join(secrets.choice(alphabet) for _ in range(8))
+            cur = db.execute(
+                """INSERT INTO redeem_codes(code, coins, max_uses)
+                   VALUES(%s, %s, %s) ON CONFLICT(code) DO NOTHING
+                   RETURNING code""",
+                (code, amount, max_uses)
+            )
+            if cur.fetchone():
+                codes.append(code)
+
+    return jsonify({
+        "ok": True, "coins": amount, "quantity": len(codes),
+        "max_uses": max_uses, "codes": codes
+    })
+
+
+@app.post("/api/redeem")
+@login_required
+def redeem_code(account):
+    data = request.get_json(silent=True) or {}
+    code = str(data.get("code", "")).strip().upper()
+
+    if len(code) != 8 or not code.isascii() or not code.isalpha():
+        return jsonify({"ok": False, "message": "Kode harus terdiri dari 8 huruf."}), 400
+
+    with db_connect() as db:
+        row = db.execute(
+            "SELECT * FROM redeem_codes WHERE code=%s FOR UPDATE",
+            (code,)
+        ).fetchone()
+
+        if not row:
+            return jsonify({"ok": False, "message": "Kode redeem tidak ditemukan."}), 404
+
+        if row["used_count"] >= row["max_uses"]:
+            return jsonify({"ok": False, "message": "Kode sudah mencapai batas pemakaian."}), 400
+
+        inserted = db.execute(
+            """INSERT INTO redeem_redemptions(code, account_id)
+               VALUES(%s, %s) ON CONFLICT(code, account_id) DO NOTHING
+               RETURNING id""",
+            (code, account["id"])
+        ).fetchone()
+
+        if not inserted:
+            return jsonify({"ok": False, "message": "Username ini sudah pernah memakai kode tersebut."}), 409
+
+        db.execute(
+            "UPDATE accounts SET coins=coins+%s WHERE id=%s",
+            (row["coins"], account["id"])
+        )
+        db.execute(
+            "UPDATE redeem_codes SET used_count=used_count+1 WHERE code=%s",
+            (code,)
+        )
+        balance = db.execute(
+            "SELECT coins FROM accounts WHERE id=%s",
+            (account["id"],)
+        ).fetchone()["coins"]
+
+    return jsonify({
+        "ok": True,
+        "message": f"Berhasil! {row['coins']} coins ditambahkan.",
+        "added": row["coins"],
+        "coins": balance
+    })
+
+
 @app.get("/api/buy-coins")
 def buy_coins():
     from flask import redirect
@@ -180,11 +296,11 @@ def send_like(account):
 
     if not uid.isdigit() or not 5 <= len(uid) <= 20:
         return jsonify({"ok": False, "message": "UID harus berupa 5–20 digit angka."}), 400
-    if service not in ("free", "vip"):
+    if service not in ("free", "vip", "like20"):
         return jsonify({"ok": False, "message": "Jenis layanan tidak valid."}), 400
 
     display_region = "ID" if service == "free" else region
-    cost = 1 if service == "free" else 5
+    cost = 5 if service == "vip" else 1
     # Reserve coin atomically so simultaneous requests cannot spend the same balance.
     with db_connect() as db:
         cur = db.execute("UPDATE accounts SET coins=coins-%s WHERE id=%s AND coins>=%s", (cost, account["id"], cost))
@@ -192,7 +308,13 @@ def send_like(account):
             return jsonify({"ok": False, "message": "Coin tidak cukup. Beli coin melalui WhatsApp."}), 402
 
     try:
-        if service == "free":
+        if service == "like20":
+            response = requests.get(
+                API20_URL,
+                params={"uid": uid, "region": region, "key": API20_KEY},
+                timeout=30
+            )
+        elif service == "free":
             response = requests.get(
                 API50_URL,
                 params={"uid": uid, "server_name": "bd", "key": API50_KEY},
@@ -238,7 +360,7 @@ def send_like(account):
                 "nickname": nickname, "uid": uid, "region": display_region,
                 "likes_before": before, "likes_after": after,
                 "coins_refunded": True,
-                "message": "LIKE VIP GAGAL: like diberikan 0 atau jumlah like tidak bertambah. Koin dikembalikan."
+                "message": "LIKE GAGAL: like tidak bertambah. Koin dikembalikan."
             }), 409
 
         with db_connect() as db:
