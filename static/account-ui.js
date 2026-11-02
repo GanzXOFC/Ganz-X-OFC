@@ -304,7 +304,7 @@ ${given > 0 ? "" : "\n📢 LIKE DIBERIKAN 0 — COINS DIKEMBALIKAN ✅"}`
   redeemButton.id = "gx-redeem-button";
   redeemButton.type = "button";
   redeemButton.textContent = "🎁 KODE REDEEM";
-  redeemButton.style.cssText = "display:block;width:100%;max-width:420px;margin:12px auto 20px;padding:13px;border:1px solid #8b70ff;border-radius:12px;background:linear-gradient(90deg,#253d91,#7138a8);color:white;font-weight:900;font-size:14px;cursor:pointer;";
+  redeemButton.style.cssText = "display:block;width:fit-content;min-width:190px;max-width:none;margin:12px auto 20px;padding:12px 28px;border:1px solid #806cff;border-radius:12px;background:linear-gradient(90deg,#3158b8,#8b45c5);color:white;font-weight:900;font-size:14px;cursor:pointer;";
   const buyArea = document.querySelector(".gx-admin");
   if (buyArea) buyArea.insertAdjacentElement("afterend", redeemButton);
 
