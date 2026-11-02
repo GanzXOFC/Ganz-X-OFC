@@ -1283,7 +1283,7 @@ body {
   const historyShadow = historyPage.attachShadow({ mode: "open" });
   historyShadow.innerHTML = `
     <style>
-      :host { all: initial; display:block; color-scheme:dark; }
+      :host { all: initial; display:block; position:relative; z-index:2; color-scheme:dark; }
       * { box-sizing:border-box; font-family:Arial,sans-serif; }
       .page {
         min-height:70vh; max-width:900px; margin:18px auto 120px;
