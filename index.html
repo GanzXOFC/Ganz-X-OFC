@@ -867,6 +867,15 @@ body {
       <span>CHANNEL WHATSAPP</span>
     </a>
 
+    <button id="gx-history-button" type="button"
+      style="display:block;width:fit-content;min-width:190px;max-width:none;margin:12px auto 20px;padding:12px 28px;border:1px solid #806cff;border-radius:12px;background:linear-gradient(90deg,#3158b8,#8b45c5);color:white;font-weight:900;font-size:14px;cursor:pointer;">
+      📜 RIWAYAT LIKE
+    </button>
+    <div id="gx-history-panel" style="display:none;margin:12px auto 22px;padding:14px;border:1px solid #494276;border-radius:14px;background:rgba(10,8,28,.85);color:white;">
+      <h2 style="text-align:center;margin:4px 0 14px;color:#a9baff;">RIWAYAT LIKE</h2>
+      <div id="gx-history-results"></div>
+    </div>
+
     <div class="gx-signature">Ganz X - OFC</div>
     <div class="gx-home-line"></div>
 
@@ -1263,6 +1272,43 @@ body {
       <div style="color:#35df91;font-weight:800">🎁 Bertambah: +${fmt(given)}</div>
       <div style="font-size:11px;opacity:.85;margin-top:6px">🕒 ${waktu}</div>
     </div>`;
+  }
+
+  const historyButton = document.getElementById("gx-history-button");
+  const historyPanel = document.getElementById("gx-history-panel");
+  const historyResults = document.getElementById("gx-history-results");
+
+  if (historyButton && historyPanel && historyResults) {
+    historyButton.addEventListener("click", async () => {
+      const opening = historyPanel.style.display === "none";
+      historyPanel.style.display = opening ? "block" : "none";
+      if (!opening) return;
+
+      const token = localStorage.getItem("gx_account_token") || "";
+      if (!token) {
+        historyResults.textContent = "Silakan login terlebih dahulu untuk melihat riwayat LIKE.";
+        return;
+      }
+
+      historyResults.textContent = "Memuat riwayat LIKE...";
+      try {
+        const response = await fetch("/api/history", {
+          headers: { "X-Account-Token": token }
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          historyResults.textContent = data.message || "Gagal mengambil riwayat.";
+          return;
+        }
+
+        historyResults.innerHTML = Array.isArray(data) && data.length
+          ? data.map(historyCard).join("")
+          : '<div class="gx-history-empty" style="text-align:center;padding:12px;">Belum ada riwayat LIKE berhasil.</div>';
+      } catch (_) {
+        historyResults.textContent = "Koneksi gagal. Silakan coba lagi.";
+      }
+    });
   }
 
   async function refreshHistory() {
