@@ -394,7 +394,8 @@ def like_history(account):
     with db_connect() as db:
         rows = db.execute("""
             SELECT id, service, uid, region, status, likes_given,
-                   likes_before, likes_after, message, created_at
+                   likes_before, likes_after, message,
+                   COALESCE(created_at, CURRENT_TIMESTAMP) AS created_at
             FROM like_history
             WHERE account_id = %s AND likes_given > 0
             ORDER BY id DESC
