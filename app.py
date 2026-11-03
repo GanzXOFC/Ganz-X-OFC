@@ -48,6 +48,9 @@ def init_db():
             ALTER TABLE accounts ADD COLUMN IF NOT EXISTS avatar_mime TEXT
         """)
         db.execute("""
+            ALTER TABLE accounts ADD COLUMN IF NOT EXISTS avatar_version BIGINT NOT NULL DEFAULT 0
+        """)
+        db.execute("""
             ALTER TABLE accounts ADD COLUMN IF NOT EXISTS display_name TEXT
         """)
         db.execute("""
@@ -112,7 +115,7 @@ def current_account():
         return None
     with db_connect() as db:
         return db.execute("""
-            SELECT a.id, a.username, a.coins, a.display_name
+            SELECT a.id, a.username, a.coins, a.display_name, a.avatar_version
             FROM account_sessions s JOIN accounts a ON a.id=s.account_id
             WHERE s.token=%s
         """, (token,)).fetchone()
@@ -199,12 +202,12 @@ def account_avatar(account_id):
         ).fetchone()
     if not row or not row["avatar_data"]:
         response = redirect("/static/profil.jpg")
-        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        response.headers["Cache-Control"] = "public, max-age=86400"
         return response
     return Response(
         bytes(row["avatar_data"]),
         mimetype=row["avatar_mime"] or "image/jpeg",
-        headers={"Cache-Control": "no-store"}
+        headers={"Cache-Control": "public, max-age=2592000, immutable"}
     )
 
 
@@ -229,13 +232,14 @@ def upload_account_avatar(account):
         return jsonify({"ok": False, "message": "Format foto harus JPG, PNG, atau WEBP."}), 400
 
     with db_connect() as db:
-        db.execute(
-            "UPDATE accounts SET avatar_data=%s, avatar_mime=%s WHERE id=%s",
+        row = db.execute(
+            "UPDATE accounts SET avatar_data=%s, avatar_mime=%s, avatar_version=avatar_version+1 WHERE id=%s RETURNING avatar_version",
             (data, mime, account["id"])
-        )
+        ).fetchone()
+    avatar_version = row["avatar_version"]
     return jsonify({
         "ok": True,
-        "avatar_url": f"/api/avatar/{account['id']}?v={secrets.token_hex(4)}"
+        "avatar_url": f"/api/avatar/{account['id']}?v={avatar_version}"
     })
 
 
@@ -268,7 +272,7 @@ def change_account_password(account):
 def account_leaderboard():
     with db_connect() as db:
         rows = db.execute("""
-            SELECT id, username, coins
+            SELECT id, username, coins, avatar_version
             FROM accounts
             ORDER BY coins DESC, id ASC
             LIMIT 100
@@ -283,7 +287,7 @@ def account_leaderboard():
             "rank": rank,
             "username": masked,
             "coins": row["coins"],
-            "avatar_url": f"/api/avatar/{row['id']}"
+            "avatar_url": f"/api/avatar/{row['id']}?v={row['avatar_version']}"
         })
     return jsonify({"ok": True, "users": result})
 

@@ -148,7 +148,7 @@
       list.innerHTML = data.users.map(user => `
         <div class="gx-topcoin-row">
           <div class="gx-topcoin-rank rank-${Number(user.rank)}">${Number(user.rank)}.</div>
-          <img src="${escapeHtml(user.avatar_url)}" alt="" onerror="this.src='/static/profil.jpg'">
+          <img src="${escapeHtml(user.avatar_url)}" alt="" loading="lazy" decoding="async" fetchpriority="low" onerror="this.src='/static/profil.jpg'">
           <div class="gx-topcoin-name">${escapeHtml(user.username)}</div>
           <div class="gx-topcoin-balance">🪙 ${Number(user.coins).toLocaleString("id-ID")}</div>
         </div>
