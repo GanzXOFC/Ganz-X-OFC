@@ -1458,5 +1458,159 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+
+<style id="gx-floating-crown-style">
+#gx-floating-crown-menu {
+  position: fixed;
+  right: 18px;
+  bottom: 100px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  touch-action: none;
+}
+#gx-crown-actions {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+#gx-floating-crown-menu.gx-open #gx-crown-actions {
+  display: flex;
+}
+#gx-crown-button {
+  width: 60px;
+  height: 60px;
+  border: 2px solid #ffe36a;
+  border-radius: 50%;
+  background: linear-gradient(145deg,#34205f,#090b20);
+  color: white;
+  font-size: 31px;
+  box-shadow: 0 0 16px #9b59ff;
+  cursor: grab;
+  touch-action: none;
+}
+#gx-crown-actions a,
+#gx-crown-actions #gx-redeem-button {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #17152c !important;
+  border: 2px solid #8d65ff !important;
+  box-shadow: 0 0 12px #7950ff !important;
+  color: white !important;
+  font-size: 25px !important;
+  text-decoration: none !important;
+  cursor: pointer;
+}
+#gx-crown-actions .gx-wa-button span {
+  display: none !important;
+}
+#gx-crown-actions .gx-wa-button svg {
+  width: 29px !important;
+  height: 29px !important;
+  fill: #25D366 !important;
+  stroke: white !important;
+}
+</style>
+
+<div id="gx-floating-crown-menu">
+  <div id="gx-crown-actions"></div>
+  <button id="gx-crown-button" type="button" aria-label="Menu utama">👑</button>
+</div>
+
+<script>
+(() => {
+  const menu = document.getElementById("gx-floating-crown-menu");
+  const crown = document.getElementById("gx-crown-button");
+  const actions = document.getElementById("gx-crown-actions");
+  if (!menu || !crown || !actions) return;
+
+  const channel = document.querySelector(".gx-wa-button");
+  if (channel) {
+    channel.innerHTML = '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3C8.8 3 3 8.7 3 15.8c0 2.5.7 4.9 2 6.9L3.5 29l6.5-1.7c1.8 1 3.8 1.5 5.9 1.5 7.2 0 13-5.8 13-12.9C28.9 8.7 23.1 3 16 3zm0 23.5c-1.9 0-3.7-.5-5.3-1.5l-.4-.2-3.9 1 1-3.8-.3-.4a10.6 10.6 0 0 1-1.7-5.8C5.4 10 10.2 5.3 16 5.3S26.5 10 26.5 15.8 21.8 26.5 16 26.5zm5.8-7.9c-.3-.1-1.8-.9-2.1-1-.3-.1-.5-.1-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.1-1.3-.5-2.5-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.5.1-.2 0-.4 0-.6l-.9-2.1c-.2-.5-.5-.4-.7-.4h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.6s1.1 3 1.3 3.2c.2.2 2.2 3.4 5.4 4.7.8.3 1.4.5 1.9.6.8.2 1.5.2 2 .1.6-.1 1.8-.7 2.1-1.4.3-.7.3-1.3.2-1.4-.1-.1-.3-.2-.6-.3z"/></svg>';
+    channel.setAttribute("aria-label", "Buka Channel WhatsApp");
+    channel.title = "Channel WhatsApp";
+    actions.appendChild(channel);
+  }
+
+  function moveRedeem() {
+    const redeem = document.getElementById("gx-redeem-button");
+    if (!redeem || redeem.parentElement === actions) return;
+    redeem.textContent = "🎁";
+    redeem.setAttribute("aria-label", "Redeem Coins");
+    redeem.title = "Redeem Coins";
+    actions.appendChild(redeem);
+  }
+
+  moveRedeem();
+  const observer = new MutationObserver(moveRedeem);
+  observer.observe(document.body, {childList: true, subtree: true});
+  setTimeout(() => observer.disconnect(), 30000);
+
+  crown.addEventListener("click", () => {
+    if (menu.dataset.dragged === "yes") return;
+    menu.classList.toggle("gx-open");
+  });
+
+  try {
+    const saved = JSON.parse(localStorage.getItem("gx-crown-position") || "null");
+    if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) {
+      menu.style.left = saved.left + "px";
+      menu.style.top = saved.top + "px";
+      menu.style.right = "auto";
+      menu.style.bottom = "auto";
+    }
+  } catch (_) {}
+
+  let dragging = false, moved = false, startX = 0, startY = 0, left = 0, top = 0;
+
+  crown.addEventListener("pointerdown", e => {
+    dragging = true;
+    moved = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    const r = menu.getBoundingClientRect();
+    left = r.left;
+    top = r.top;
+    crown.setPointerCapture(e.pointerId);
+  });
+
+  crown.addEventListener("pointermove", e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (Math.abs(dx) + Math.abs(dy) > 7) moved = true;
+    if (!moved) return;
+    const x = Math.max(0, Math.min(innerWidth - menu.offsetWidth, left + dx));
+    const y = Math.max(0, Math.min(innerHeight - menu.offsetHeight, top + dy));
+    menu.style.left = x + "px";
+    menu.style.top = y + "px";
+    menu.style.right = "auto";
+    menu.style.bottom = "auto";
+  });
+
+  crown.addEventListener("pointerup", () => {
+    if (!dragging) return;
+    dragging = false;
+    if (moved) {
+      menu.dataset.dragged = "yes";
+      const r = menu.getBoundingClientRect();
+      localStorage.setItem("gx-crown-position", JSON.stringify({left:r.left,top:r.top}));
+      setTimeout(() => { menu.dataset.dragged = "no"; }, 250);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
