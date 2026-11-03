@@ -1639,5 +1639,37 @@ if ("serviceWorker" in navigator) {
 }
 </style>
 
+
+<style id="gx-crown-wa-adjustment">
+/* Perbesar gagang telepon WhatsApp sedikit */
+.gx-admin-link svg path:nth-of-type(2) {
+  transform: scale(.94) !important;
+  transform-origin: 12px 12px;
+}
+
+/* Menu Redeem dan Channel muncul ke atas tanpa menggeser mahkota */
+#gx-floating-crown-menu {
+  display: block !important;
+  width: 60px !important;
+  height: 60px !important;
+}
+
+#gx-crown-button {
+  position: absolute !important;
+  left: 0 !important;
+  bottom: 0 !important;
+}
+
+#gx-crown-actions {
+  position: absolute !important;
+  left: 50% !important;
+  bottom: 70px !important;
+  transform: translateX(-50%) !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+</style>
+
 </body>
 </html>
