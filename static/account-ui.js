@@ -106,7 +106,7 @@
 
 
   function setProfileAvatar(url) {
-    const image = url || "/static/profil.jpg";
+    const image = url || "/static/profil.webp";
     const profileImage = document.getElementById("gx-profile-avatar");
     const homeImage = document.querySelector(".profile-header .profile img");
     if (profileImage) profileImage.src = image;
@@ -124,7 +124,7 @@
     if (headerName) headerName.textContent = displayName;
     if (usernameBox) usernameBox.textContent = account.username || "AKUN";
     if (coinsBox) coinsBox.textContent = "🪙 " + (account.coins ?? 0);
-    setProfileAvatar(account.avatar_url || "/static/profil.jpg");
+    setProfileAvatar(account.avatar_url || "/static/profil.webp");
   }
 
   function escapeHtml(value) {
@@ -148,7 +148,7 @@
       list.innerHTML = data.users.map(user => `
         <div class="gx-topcoin-row">
           <div class="gx-topcoin-rank rank-${Number(user.rank)}">${Number(user.rank)}.</div>
-          <img src="${escapeHtml(user.avatar_url)}" alt="" loading="lazy" decoding="async" fetchpriority="low" onerror="this.src='/static/profil.jpg'">
+          <img src="${escapeHtml(user.avatar_url)}" alt="" loading="lazy" decoding="async" fetchpriority="low" onerror="this.src='/static/profil.webp'">
           <div class="gx-topcoin-name">${escapeHtml(user.username)}</div>
           <div class="gx-topcoin-balance">🪙 ${Number(user.coins).toLocaleString("id-ID")}</div>
         </div>
@@ -242,7 +242,7 @@
       accountBtn.textContent = "";
       const homeUsername = document.getElementById("gx-home-username");
       if (homeUsername) homeUsername.style.display = "none";
-      setProfileAvatar("/static/profil.jpg");
+      setProfileAvatar("/static/profil.webp");
       const profileName = document.getElementById("gx-profile-username");
       const profileCoins = document.getElementById("gx-profile-coins");
       if (profileName) profileName.textContent = "Belum login";

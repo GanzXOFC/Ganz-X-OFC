@@ -201,7 +201,7 @@ def account_avatar(account_id):
             (account_id,)
         ).fetchone()
     if not row or not row["avatar_data"]:
-        response = redirect("/static/profil.jpg")
+        response = redirect("/static/profil.webp")
         response.headers["Cache-Control"] = "public, max-age=86400"
         return response
     return Response(
