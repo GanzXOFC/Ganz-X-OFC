@@ -805,6 +805,20 @@ body {
   display: none !important;
 }
 
+
+#gx-home-like-history{margin:24px auto 35px;padding:16px;max-width:900px;border:1px solid #494276;border-radius:18px;background:#0a081c;color:#fff}
+#gx-home-like-history h2{text-align:center;color:#a9baff;margin:5px 0 18px}
+.gx-home-history-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:start}
+.gx-home-history-columns>div{min-width:0}
+.gx-home-history-columns h3{text-align:center;font-size:16px;margin:4px 0 10px}
+.gx-home-free-title{color:#8ebaff}.gx-home-vip-title{color:#c6a0ff}
+#gx-home-like-history .history-card{display:block;width:100%;margin:8px 0;padding:11px;border:1px solid #7165a8;border-radius:11px;background:#17132d;color:#fff;font-size:12px;line-height:1.8;overflow-wrap:anywhere;box-sizing:border-box}
+#gx-home-like-history .history-given{color:#42f5a1;font-weight:900}
+#gx-home-like-history .history-time{color:#c9c3e8;font-size:10px;margin-top:7px}
+.gx-home-history-empty{text-align:center;padding:10px 2px;color:#fff;font-size:12px}
+.gx-home-history-note{text-align:center;font-size:11px;opacity:.8;margin-top:18px}
+@media(max-width:480px){#gx-home-like-history{padding:9px}.gx-home-history-columns{gap:6px}#gx-home-like-history .history-card{padding:7px;font-size:10px}.gx-home-history-columns h3{font-size:13px}}
+
 </style>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#080d1c">
@@ -867,10 +881,14 @@ body {
       <span>CHANNEL WHATSAPP</span>
     </a>
 
-    <button id="gx-history-button" type="button"
-      style="display:block;width:fit-content;min-width:190px;max-width:none;margin:12px auto 20px;padding:12px 28px;border:1px solid #806cff;border-radius:12px;background:linear-gradient(90deg,#3158b8,#8b45c5);color:white;font-weight:900;font-size:14px;cursor:pointer;">
-      📜 RIWAYAT LIKE
-    </button>
+    <section id="gx-home-like-history">
+      <h2>📜 RIWAYAT LIKE</h2>
+      <div class="gx-home-history-columns">
+        <div><h3 class="gx-home-free-title">LIKE +50</h3><div id="gx-home-history-free">Memuat...</div></div>
+        <div><h3 class="gx-home-vip-title">LIKE +220</h3><div id="gx-home-history-vip">Memuat...</div></div>
+      </div>
+      <p class="gx-home-history-note">Waktu ditampilkan dalam WIB</p>
+    </section>
 
     <div class="gx-signature">Ganz X - OFC</div>
     <div class="gx-home-line"></div>
@@ -1259,130 +1277,41 @@ body {
     </article>`;
   }
 
-  const historyButton = document.getElementById("gx-history-button");
-
-  historyPage = document.createElement("div");
-  historyPage.id = "gx-page-history";
-  historyPage.style.display = "none";
-  document.body.appendChild(historyPage);
-
-  const historyShadow = historyPage.attachShadow({ mode: "open" });
-  historyShadow.innerHTML = `
-    <style>
-      :host { all: initial; display:block; position:relative; z-index:2; color-scheme:dark; }
-      * { box-sizing:border-box; font-family:Arial,sans-serif; }
-      .page {
-        min-height:70vh; max-width:900px; margin:18px auto 120px;
-        padding:16px; border:1px solid #494276; border-radius:18px;
-        background:#0a081c; color:#ffffff !important;
-        font-size:13px; line-height:1.7;
-        -webkit-text-fill-color:#ffffff !important;
-      }
-      .back {
-        display:block; margin:0 auto 16px; padding:10px 22px;
-        border:1px solid #806cff; border-radius:11px;
-        background:linear-gradient(90deg,#3158b8,#8b45c5);
-        color:#ffffff !important; -webkit-text-fill-color:#ffffff !important;
-        font-weight:900; font-size:13px;
-      }
-      h2 { text-align:center; color:#a9baff !important;
-        -webkit-text-fill-color:#a9baff !important; margin:8px 0 18px; }
-      .columns { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; align-items:start; }
-      .column { min-width:0; color:#ffffff !important; -webkit-text-fill-color:#ffffff !important; }
-      h3 { text-align:center; font-size:16px; margin:4px 0 10px; }
-      .free-title { color:#8ebaff !important; -webkit-text-fill-color:#8ebaff !important; }
-      .vip-title { color:#c6a0ff !important; -webkit-text-fill-color:#c6a0ff !important; }
-      .history-card {
-        display:block; width:100%; margin:8px 0; padding:11px;
-        border:1px solid #7165a8; border-radius:11px;
-        background:#17132d; color:#ffffff !important;
-        -webkit-text-fill-color:#ffffff !important;
-        font-size:12px; line-height:1.8; overflow-wrap:anywhere;
-      }
-      .history-card div { color:#ffffff !important; -webkit-text-fill-color:#ffffff !important; }
-      .history-card .history-uid { font-weight:900; }
-      .history-card .history-given { color:#42f5a1 !important; -webkit-text-fill-color:#42f5a1 !important; font-weight:900; }
-      .history-card .history-time { color:#c9c3e8 !important; -webkit-text-fill-color:#c9c3e8 !important; font-size:10px; margin-top:7px; }
-      .empty { text-align:center; padding:10px 2px; color:#ffffff !important; -webkit-text-fill-color:#ffffff !important; }
-      .note { text-align:center; font-size:11px; opacity:.8; margin-top:18px; color:#ffffff !important; -webkit-text-fill-color:#ffffff !important; }
-      @media(max-width:360px) {
-        .page { padding:9px; }
-        .columns { gap:6px; }
-        .history-card { padding:7px; font-size:10px; }
-        h3 { font-size:13px; }
-      }
-    </style>
-    <main class="page">
-      <button class="back" id="history-back">← KEMBALI</button>
-      <h2>📜 RIWAYAT LIKE</h2>
-      <div class="columns">
-        <section class="column">
-          <h3 class="free-title">LIKE +50</h3>
-          <div id="history-free"></div>
-        </section>
-        <section class="column">
-          <h3 class="vip-title">LIKE +220</h3>
-          <div id="history-vip"></div>
-        </section>
-      </div>
-      <p class="note">Waktu ditampilkan dalam WIB</p>
-    </main>
-  `;
-
-  const historyFree = historyShadow.querySelector("#history-free");
-  const historyVip = historyShadow.querySelector("#history-vip");
-  historyShadow.querySelector("#history-back").addEventListener("click", () => showPage("home"));
-
-  if (historyButton) {
-    historyButton.addEventListener("click", async () => {
-      showPage("history");
-
-      const token = localStorage.getItem("gx_account_token") || "";
-      if (!token) {
-        historyFree.innerHTML = '<p class="empty">Silakan login terlebih dahulu.</p>';
-        historyVip.innerHTML = '<p class="empty">Silakan login terlebih dahulu.</p>';
-        return;
-      }
-
-      historyFree.innerHTML = '<p class="empty">Memuat...</p>';
-      historyVip.innerHTML = '<p class="empty">Memuat...</p>';
-
-      try {
-        const response = await fetch("/api/history", {
-          headers: { "X-Account-Token": token }
-        });
-        const data = await response.json();
-
-        if (!response.ok) {
-          const msg = escapeText(data.message || "Gagal mengambil riwayat.");
-          historyFree.innerHTML = `<p class="empty">${msg}</p>`;
-          historyVip.innerHTML = `<p class="empty">${msg}</p>`;
-          return;
-        }
-
-        const rows = Array.isArray(data) ? data : [];
-        const freeRows = rows.filter(item => String(item.service || "").toLowerCase() === "free");
-        const vipRows = rows.filter(item => String(item.service || "").toLowerCase() === "vip");
-        const empty = '<p class="empty">Belum ada riwayat.</p>';
-
-        historyFree.innerHTML = freeRows.length ? freeRows.map(historyCard).join("") : empty;
-        historyVip.innerHTML = vipRows.length ? vipRows.map(historyCard).join("") : empty;
-      } catch (_) {
-        historyFree.innerHTML = '<p class="empty">Koneksi gagal. Coba lagi.</p>';
-        historyVip.innerHTML = '<p class="empty">Koneksi gagal. Coba lagi.</p>';
-      }
-    });
-  }
+  const homeHistoryFree = document.getElementById("gx-home-history-free");
+  const homeHistoryVip = document.getElementById("gx-home-history-vip");
+  historyPage = null;
 
   async function refreshHistory() {
-    if (!homeHistory) return;
-    const rows = [];
-    for (let coins = 5; coins <= 50; coins += 5) {
-      const price = (coins / 5 * 3000).toLocaleString("id-ID");
-      const label = coins === 5 ? "COIN" : "COINS";
-      rows.push(`<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>${coins} ${label} 🪙</strong><span>= ${price}</span></div>`);
+    if (!homeHistoryFree || !homeHistoryVip) return;
+    const token = localStorage.getItem("gx_account_token") || "";
+    if (!token) {
+      const msg = '<p class="gx-home-history-empty">Silakan login terlebih dahulu.</p>';
+      homeHistoryFree.innerHTML = msg;
+      homeHistoryVip.innerHTML = msg;
+      return;
     }
-    homeHistory.innerHTML = rows.join("");
+    homeHistoryFree.innerHTML = '<p class="gx-home-history-empty">Memuat...</p>';
+    homeHistoryVip.innerHTML = '<p class="gx-home-history-empty">Memuat...</p>';
+    try {
+      const response = await fetch("/api/history", {headers: {"X-Account-Token": token}});
+      const data = await response.json();
+      if (!response.ok) {
+        const msg = '<p class="gx-home-history-empty">' + escapeText(data.message || "Gagal mengambil riwayat.") + '</p>';
+        homeHistoryFree.innerHTML = msg;
+        homeHistoryVip.innerHTML = msg;
+        return;
+      }
+      const rows = Array.isArray(data) ? data : [];
+      const freeRows = rows.filter(item => String(item.service || "").toLowerCase() === "free");
+      const vipRows = rows.filter(item => String(item.service || "").toLowerCase() === "vip");
+      const empty = '<p class="gx-home-history-empty">Belum ada riwayat.</p>';
+      homeHistoryFree.innerHTML = freeRows.length ? freeRows.map(historyCard).join("") : empty;
+      homeHistoryVip.innerHTML = vipRows.length ? vipRows.map(historyCard).join("") : empty;
+    } catch (_) {
+      const msg = '<p class="gx-home-history-empty">Koneksi gagal. Coba lagi.</p>';
+      homeHistoryFree.innerHTML = msg;
+      homeHistoryVip.innerHTML = msg;
+    }
   }
 
   refreshHistory();
