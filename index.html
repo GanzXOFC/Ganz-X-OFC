@@ -1246,6 +1246,9 @@ body {
       ? "Belum diketahui"
       : Number(value).toLocaleString("id-ID");
 
+    const nickname = item.nickname || item.player_nickname ||
+      item.PlayerNickname || item.name || "Tidak diketahui";
+
     let waktu = "Waktu tidak diketahui";
     if (item.created_at) {
       const raw = String(item.created_at).trim();
@@ -1253,26 +1256,29 @@ body {
       const date = new Date(/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z");
 
       if (!Number.isNaN(date.getTime())) {
-        waktu = new Intl.DateTimeFormat("id-ID", {
+        const parts = new Intl.DateTimeFormat("id-ID", {
           timeZone: "Asia/Jakarta",
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-          hourCycle: "h23"
-        }).format(date) + " WIB";
+          weekday: "short",
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }).formatToParts(date);
+
+        const part = type => parts.find(x => x.type === type)?.value || "";
+        const hari = part("weekday").replace(/[.,]/g, "");
+        waktu = `${hari} ${part("day")} ${part("month")} ${part("year")}`;
       } else {
         waktu = escapeText(raw);
       }
     }
 
     return `<article class="history-card">
-      <div class="history-uid">🆔 UID: ${escapeText(item.uid ?? "-")}</div>
-      <div>🌍 Region: ${escapeText(item.region ?? "-")}</div>
-      <div>❤️ Like sebelum: ${fmt(item.likes_before)}</div>
-      <div>💗 Like sesudah: ${fmt(item.likes_after)}</div>
-      <div class="history-given">🎁 Bertambah: +${fmt(given)}</div>
+      <div>👤 Nickname : ${escapeText(nickname)}</div>
+      <div class="history-uid">🆔 UID : ${escapeText(item.uid ?? "-")}</div>
+      <div>🌍 Region : ${escapeText(item.region ?? "-")}</div>
+      <div>❤️ Like sebelum : ${fmt(item.likes_before)}</div>
+      <div>💗 Like sesudah : ${fmt(item.likes_after)}</div>
+      <div class="history-given">🎁 Bertambah : +${fmt(given)}</div>
       <div class="history-time">🕒 ${waktu}</div>
     </article>`;
   }
@@ -1619,7 +1625,7 @@ if ("serviceWorker" in navigator) {
 <style id="gx-top-buttons-layout">
 /* SALDO COINS di atas MUSIC, pojok kanan atas */
 #gx-coin-label {
-  top: 29px !important;
+  top: 30px !important;
   right: 17px !important;
   z-index: 10001 !important;
 }
