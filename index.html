@@ -1022,11 +1022,11 @@ body {
 
 <script>
 (function () {
-  /* Membuat 260 bintang */
+  /* Membuat 120 bintang agar lebih ringan */
   const layer = document.getElementById("stars");
   const fragment = document.createDocumentFragment();
 
-  for (let i = 0; i < 260; i++) {
+  for (let i = 0; i < 120; i++) {
     const star = document.createElement("span");
     star.className = "star";
 
@@ -1238,30 +1238,29 @@ body {
 
 
 
+  const historyDateFormatter = new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+
   function historyCard(item) {
     const given = Number(item.likes_given ?? 0);
-    if (!Number.isFinite(given) || given <= 0) r    let waktu = "Waktu tidak diketahui";
+    if (!Number.isFinite(given) || given <= 0) return "";
+
+    const fmt = value => value == null
+      ? "Belum diketahui"
+      : Number(value).toLocaleString("id-ID");
+
+    let waktu = "Waktu tidak diketahui";
     if (item.created_at) {
-      const date = new Date(String(item.created_at).trim());e(/([+-]\\d{2})$/, "$1:00");
-      if (!/[zZ]|[+-]\\d{2}:?\\d{2}$/.test(iso)) iso += "Z";
-
-      const date = new Date(iso);
+      const date = new Date(String(item.created_at).trim());
       if (!Number.isNaN(date.getTime())) {
-        const parts = new Intl.DateTimeFormat("en-GB", {
-          timeZone: "Asia/Jakarta",
-          weekday: "short",
-          day: "numeric",
-          month: "numeric",
-          year: "numeric"
-        }).formatToParts(date);
-
+        const parts = historyDateFormatter.formatToParts(date);
         const get = type => parts.find(x => x.type === type)?.value || "";
-        const hari = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-        const namaHari = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
-        const bulan = ["Januari","Februari","Maret","April","Mei","Juni",
-          "Juli","Agustus","September","Oktober","November","Desember"];
-        const indexHari = hari.indexOf(get("weekday"));
-        waktu = `${namaHari[indexHari] || ""} ${get("day")} ${bulan[Number(get("month")) - 1]} ${get("year")}`;
+        waktu = `${get("weekday").replace(/[,.]/g, "")} ${get("day")} ${get("month")} ${get("year")}`;
       }
     }
 
