@@ -651,9 +651,17 @@ body {
   outline: none;
 }
 
-/* Atur posisi panah dropdown REGION */
-.gx-form select {
-  padding-right: 22px !important;
+
+/* Panah REGION custom: digeser menjauh dari garis kanan */
+.gx-form[data-service="free"] select,
+.gx-form[data-service="vip"] select {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  padding-right: 40px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 16px center !important;
+  background-size: 14px 14px !important;
 }
 
 .gx-form input:focus, .gx-form select:focus {
@@ -1649,7 +1657,7 @@ if ("serviceWorker" in navigator) {
 <style id="gx-crown-wa-adjustment">
 /* Perbesar gagang telepon WhatsApp sedikit */
 .gx-admin-link svg path:nth-of-type(2) {
-  transform: scale(1.02) !important;
+  transform: scale(1.12) !important;
   transform-origin: 12px 12px;
 }
 
