@@ -5,7 +5,7 @@ import secrets
 import requests
 from functools import wraps
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, Response, redirect
 from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
@@ -40,6 +40,22 @@ def init_db():
                 coins BIGINT NOT NULL DEFAULT 0,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
+        """)
+        db.execute("""
+            ALTER TABLE accounts ADD COLUMN IF NOT EXISTS avatar_data BYTEA
+        """)
+        db.execute("""
+            ALTER TABLE accounts ADD COLUMN IF NOT EXISTS avatar_mime TEXT
+        """)
+        db.execute("""
+            ALTER TABLE accounts ADD COLUMN IF NOT EXISTS display_name TEXT
+        """)
+        db.execute("""
+            UPDATE accounts SET display_name='Ganz X - OFC'
+            WHERE display_name IS NULL OR BTRIM(display_name)=''
+        """)
+        db.execute("""
+            ALTER TABLE accounts ALTER COLUMN display_name SET DEFAULT 'Ganz X - OFC'
         """)
         db.execute("""
             CREATE UNIQUE INDEX IF NOT EXISTS accounts_username_lower_idx
@@ -96,7 +112,7 @@ def current_account():
         return None
     with db_connect() as db:
         return db.execute("""
-            SELECT a.id, a.username, a.coins
+            SELECT a.id, a.username, a.coins, a.display_name
             FROM account_sessions s JOIN accounts a ON a.id=s.account_id
             WHERE s.token=%s
         """, (token,)).fetchone()
@@ -118,8 +134,27 @@ def account_info():
     return jsonify({
         "logged_in": True,
         "username": account["username"],
-        "coins": account["coins"]
+        "display_name": account.get("display_name") or "Ganz X - OFC",
+        "coins": account["coins"],
+        "avatar_url": f"/api/avatar/{account['id']}?v={secrets.token_hex(8)}"
     })
+
+@app.post("/api/account/name")
+@login_required
+def update_account_name(account):
+    data = request.get_json(silent=True) or {}
+    display_name = str(data.get("display_name", "")).strip()
+    if not display_name or len(display_name) > 30:
+        return jsonify({"ok": False, "message": "Nama harus 1–30 karakter."}), 400
+
+    with db_connect() as db:
+        db.execute(
+            "UPDATE accounts SET display_name=%s WHERE id=%s",
+            (display_name, account["id"])
+        )
+    return jsonify({"ok": True, "display_name": display_name,
+                    "message": "Nama tampilan berhasil disimpan."})
+
 
 @app.post("/api/register")
 def register():
@@ -153,6 +188,105 @@ def login():
         token = secrets.token_urlsafe(32)
         db.execute("INSERT INTO account_sessions(token,account_id) VALUES(%s,%s)", (token, row["id"]))
     return jsonify({"ok": True, "token": token, "username": row["username"], "coins": row["coins"]})
+
+
+@app.get("/api/avatar/<int:account_id>")
+def account_avatar(account_id):
+    with db_connect() as db:
+        row = db.execute(
+            "SELECT avatar_data, avatar_mime FROM accounts WHERE id=%s",
+            (account_id,)
+        ).fetchone()
+    if not row or not row["avatar_data"]:
+        response = redirect("/static/profil.jpg")
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        return response
+    return Response(
+        bytes(row["avatar_data"]),
+        mimetype=row["avatar_mime"] or "image/jpeg",
+        headers={"Cache-Control": "no-store"}
+    )
+
+
+@app.post("/api/account/avatar")
+@login_required
+def upload_account_avatar(account):
+    file = request.files.get("avatar")
+    if not file:
+        return jsonify({"ok": False, "message": "Pilih foto terlebih dahulu."}), 400
+
+    data = file.read(1024 * 1024 + 1)
+    if not data or len(data) > 1024 * 1024:
+        return jsonify({"ok": False, "message": "Ukuran foto maksimal 1 MB."}), 400
+
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        mime = "image/png"
+    elif data.startswith(b"\xff\xd8\xff"):
+        mime = "image/jpeg"
+    elif data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        mime = "image/webp"
+    else:
+        return jsonify({"ok": False, "message": "Format foto harus JPG, PNG, atau WEBP."}), 400
+
+    with db_connect() as db:
+        db.execute(
+            "UPDATE accounts SET avatar_data=%s, avatar_mime=%s WHERE id=%s",
+            (data, mime, account["id"])
+        )
+    return jsonify({
+        "ok": True,
+        "avatar_url": f"/api/avatar/{account['id']}?v={secrets.token_hex(4)}"
+    })
+
+
+@app.post("/api/account/password")
+@login_required
+def change_account_password(account):
+    data = request.get_json(silent=True) or {}
+    old_password = str(data.get("current_password", ""))
+    new_password = str(data.get("new_password", ""))
+
+    if not 8 <= len(new_password) <= 128:
+        return jsonify({"ok": False, "message": "Password baru harus 8–128 karakter."}), 400
+
+    with db_connect() as db:
+        row = db.execute(
+            "SELECT password_hash FROM accounts WHERE id=%s",
+            (account["id"],)
+        ).fetchone()
+        if not row or not check_password_hash(row["password_hash"], old_password):
+            return jsonify({"ok": False, "message": "Password lama salah."}), 400
+        db.execute(
+            "UPDATE accounts SET password_hash=%s WHERE id=%s",
+            (generate_password_hash(new_password), account["id"])
+        )
+
+    return jsonify({"ok": True, "message": "Password berhasil diganti."})
+
+
+@app.get("/api/leaderboard")
+def account_leaderboard():
+    with db_connect() as db:
+        rows = db.execute("""
+            SELECT id, username, coins
+            FROM accounts
+            ORDER BY coins DESC, id ASC
+            LIMIT 100
+        """).fetchall()
+
+    result = []
+    for rank, row in enumerate(rows, 1):
+        username = str(row["username"] or "")
+        visible = (len(username) + 1) // 2
+        masked = username[:visible] + "*" * (len(username) - visible)
+        result.append({
+            "rank": rank,
+            "username": masked,
+            "coins": row["coins"],
+            "avatar_url": f"/api/avatar/{row['id']}"
+        })
+    return jsonify({"ok": True, "users": result})
+
 
 @app.post("/api/logout")
 @login_required

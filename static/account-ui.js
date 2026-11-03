@@ -7,7 +7,7 @@
 
   const style = document.createElement("style");
   style.textContent = `
-  #gx-account-btn{display:block!important;position:static;right:auto;top:auto;z-index:10;border:1px solid #7562ff;
+  #gx-account-btn{display:none!important;position:static;right:auto;top:auto;z-index:10;border:1px solid #7562ff;
   border-radius:12px;padding:9px 12px;background:#17132b;color:#fff;font-weight:bold}
   #gx-account-modal{position:fixed;inset:0;z-index:99999;background:#05030de8;display:none;
   align-items:center;justify-content:center;padding:18px;font-family:Arial,sans-serif}
@@ -89,6 +89,9 @@
     account = data.account || data.user || data;
     updateWelcomeLoginButton();
     const username = account.username || account.name || "AKUN";
+    const displayName = account.display_name || "Ganz X - OFC";
+    const headerName = document.querySelector(".profile-header .profile-name");
+    if (headerName) headerName.textContent = displayName;
     const homeUsername = document.getElementById("gx-home-username");
     if (homeUsername) {
       homeUsername.textContent = "👤 " + username;
@@ -98,7 +101,139 @@
     accountBtn.textContent = `👤 ${username} · 🪙 ${coins}`;
     const oldCoin = $("#gx-coin-label");
     if (oldCoin) oldCoin.textContent = `🪙 COINS : ${coins}`;
+    renderProfile();
   }
+
+
+  function setProfileAvatar(url) {
+    const image = url || "/static/profil.jpg";
+    const profileImage = document.getElementById("gx-profile-avatar");
+    const homeImage = document.querySelector(".profile-header .profile img");
+    if (profileImage) profileImage.src = image;
+    if (homeImage) homeImage.src = image;
+  }
+
+  function renderProfile() {
+    if (!account) return;
+    const usernameBox = document.getElementById("gx-profile-username");
+    const coinsBox = document.getElementById("gx-profile-coins");
+    const displayNameInput = document.getElementById("gx-display-name");
+    const headerName = document.querySelector(".profile-header .profile-name");
+    const displayName = account.display_name || "Ganz X - OFC";
+    if (displayNameInput && document.activeElement !== displayNameInput) displayNameInput.value = displayName;
+    if (headerName) headerName.textContent = displayName;
+    if (usernameBox) usernameBox.textContent = account.username || "AKUN";
+    if (coinsBox) coinsBox.textContent = "🪙 " + (account.coins ?? 0);
+    setProfileAvatar(account.avatar_url || "/static/profil.jpg");
+  }
+
+  function escapeHtml(value) {
+    const el = document.createElement("span");
+    el.textContent = String(value ?? "");
+    return el.innerHTML;
+  }
+
+  async function loadTopCoins() {
+    const list = document.getElementById("gx-topcoins-list");
+    if (!list) return;
+    list.textContent = "Memuat leaderboard...";
+    try {
+      const response = await fetch("/api/leaderboard", {cache:"no-store"});
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error("Gagal memuat leaderboard.");
+      if (!data.users || !data.users.length) {
+        list.textContent = "Belum ada akun.";
+        return;
+      }
+      list.innerHTML = data.users.map(user => `
+        <div class="gx-topcoin-row">
+          <div class="gx-topcoin-rank rank-${Number(user.rank)}">${Number(user.rank)}.</div>
+          <img src="${escapeHtml(user.avatar_url)}" alt="" onerror="this.src='/static/profil.jpg'">
+          <div class="gx-topcoin-name">${escapeHtml(user.username)}</div>
+          <div class="gx-topcoin-balance">🪙 ${Number(user.coins).toLocaleString("id-ID")}</div>
+        </div>
+      `).join("");
+    } catch (error) {
+      list.textContent = error.message || "Koneksi gagal.";
+    }
+  }
+
+  document.querySelector('[data-gx-page="account"]')?.addEventListener("click", event => {
+    if (!token || !account) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      showModal("login");
+      message("Login terlebih dahulu untuk membuka profil.");
+      return;
+    }
+    renderProfile();
+  }, true);
+
+  document.querySelector('[data-gx-page="topcoins"]')?.addEventListener("click", loadTopCoins);
+  document.getElementById("gx-topcoins-refresh")?.addEventListener("click", loadTopCoins);
+
+  document.getElementById("gx-avatar-file")?.addEventListener("change", async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      $("#gx-profile-message").textContent = "Ukuran foto maksimal 1 MB.";
+      event.target.value = "";
+      return;
+    }
+    const form = new FormData();
+    form.append("avatar", file);
+    try {
+      const response = await fetch("/api/account/avatar", {
+        method:"POST",
+        headers:{"X-Account-Token":token},
+        body:form
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Upload foto gagal.");
+      account.avatar_url = data.avatar_url;
+      setProfileAvatar(data.avatar_url);
+      $("#gx-profile-message").textContent = "Foto profil berhasil diperbarui.";
+    } catch (error) {
+      $("#gx-profile-message").textContent = error.message;
+    }
+    event.target.value = "";
+  });
+
+  document.getElementById("gx-display-name-form")?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const display_name = $("#gx-display-name").value.trim();
+    try {
+      const result = await api("/api/account/name", {display_name});
+      account.display_name = result.display_name;
+      renderProfile();
+      $("#gx-profile-message").textContent = result.message || "Nama berhasil disimpan.";
+    } catch (error) {
+      $("#gx-profile-message").textContent = error.message || "Gagal menyimpan nama.";
+    }
+  });
+
+  document.getElementById("gx-password-form")?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const current_password = $("#gx-current-password").value;
+    const new_password = $("#gx-new-password").value;
+    try {
+      const result = await api("/api/account/password", {current_password,new_password});
+      $("#gx-profile-message").textContent = result.message || "Password berhasil diganti.";
+      event.target.reset();
+    } catch (error) {
+      $("#gx-profile-message").textContent = error.message;
+    }
+  });
+
+  document.getElementById("gx-profile-logout")?.addEventListener("click", async () => {
+    if (!confirm("Yakin ingin logout dari akun ini?")) return;
+    try { await api("/api/logout", {}); } catch (_) {}
+    token = "";
+    account = null;
+    localStorage.removeItem("gx_account_token");
+    await refreshAccount();
+    document.querySelector('[data-gx-page="home"]')?.click();
+  });
 
   async function refreshAccount() {
     if (!token) {
@@ -107,6 +242,11 @@
       accountBtn.textContent = "";
       const homeUsername = document.getElementById("gx-home-username");
       if (homeUsername) homeUsername.style.display = "none";
+      setProfileAvatar("/static/profil.jpg");
+      const profileName = document.getElementById("gx-profile-username");
+      const profileCoins = document.getElementById("gx-profile-coins");
+      if (profileName) profileName.textContent = "Belum login";
+      if (profileCoins) profileCoins.textContent = "0";
       const oldCoin = $("#gx-coin-label");
       if (oldCoin) oldCoin.textContent = "🪙 COINS : 0";
       return;
@@ -129,35 +269,15 @@
   const homeUsernameBtn = document.getElementById("gx-home-username");
   if (homeUsernameBtn) {
     homeUsernameBtn.style.cursor = "pointer";
-    homeUsernameBtn.title = "Klik username untuk logout";
+    homeUsernameBtn.title = "Buka profil akun";
     homeUsernameBtn.addEventListener("click", () => {
       if (token && account) {
-        if (confirm(`Keluar dari akun ${account.username || "aktif"}?`)) {
-          token = "";
-          account = null;
-          localStorage.removeItem("gx_account_token");
-          refreshAccount();
-          showModal("login");
-        }
+        document.querySelector('[data-gx-page="account"]')?.click();
       } else {
         showModal("login");
       }
     });
   }
-
-  accountBtn.addEventListener("click", () => {
-    if (token && account) {
-      if (confirm(`Keluar dari akun ${account.username || "aktif"}?`)) {
-        token = "";
-        account = null;
-        localStorage.removeItem("gx_account_token");
-        refreshAccount();
-        showModal("login");
-      }
-    } else {
-      showModal("login");
-    }
-  });
 
   $("#gx-auth-close").onclick = () => modal.style.display = "none";
   $("#gx-auth-switch").style.display="block"; $("#gx-auth-switch").onclick = () => showModal(mode === "login" ? "register" : "login");
