@@ -1,4 +1,4 @@
-const CACHE_NAME = "ganz-x-pwa-v1";
+const CACHE_NAME = "ganz-x-pwa-v2";
 const SHELL = [
   "/",
   "/manifest.json",
