@@ -859,7 +859,7 @@ body {
          target="_blank"
          rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="10" fill="#25D366" stroke="#fff" stroke-width="1"/>
+          <path d="M12 2C6.48 2 2 6.48 2 12c0 1.78.47 3.45 1.29 4.9L2 22l5.25-1.25A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2Z" fill="#25D366" stroke="#fff" stroke-width="1" stroke-linejoin="round"/>
           <path d="M8.2 7.5c.3-.5.6-.5.9-.5h.5c.2 0 .4.1.5.4l.8 1.8c.1.2.1.4-.1.6l-.6.7c-.2.2-.2.4 0 .7.6 1 1.4 1.8 2.5 2.3.2.1.4.1.6-.1l.8-.9c.2-.2.4-.2.6-.1l1.7.8c.3.1.4.3.4.5 0 .4-.2 1-.6 1.3-.4.4-1.1.7-1.8.6-1-.1-2.3-.6-3.7-1.8-1.2-1-2.1-2.3-2.4-3.2-.4-1.1-.1-2.3.4-3.1Z" fill="#fff" stroke="none"/>
         </svg>
         <span>COINS 🪙</span>
@@ -1240,17 +1240,9 @@ body {
 
   function historyCard(item) {
     const given = Number(item.likes_given ?? 0);
-    if (!Number.isFinite(given) || given <= 0) return "";
-
-    const fmt = value => value == null
-      ? "Belum diketahui"
-      : Number(value).toLocaleString("id-ID");
-
-    let waktu = "Waktu tidak diketahui";
+    if (!Number.isFinite(given) || given <= 0) r    let waktu = "Waktu tidak diketahui";
     if (item.created_at) {
-      let raw = String(item.created_at).trim();
-      let iso = raw.includes("T") ? raw : raw.replace(" ", "T");
-      iso = iso.replace(/([+-]\\d{2})$/, "$1:00");
+      const date = new Date(String(item.created_at).trim());e(/([+-]\\d{2})$/, "$1:00");
       if (!/[zZ]|[+-]\\d{2}:?\\d{2}$/.test(iso)) iso += "Z";
 
       const date = new Date(iso);
