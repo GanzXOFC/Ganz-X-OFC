@@ -876,21 +876,7 @@ body {
     <div class="gx-home-line"></div>
 
 
-    <div class="gx-extra-page" id="gx-home-history" style="display:block;margin-top:28px">
-<h2 style="text-align:center;margin-bottom:22px">HARGA COINS</h2>
-<div class="gx-history-list" id="gx-home-history-list">
-<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>5 COIN 🪙</strong><span>= 3.000</span></div>
-<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>10 COINS 🪙</strong><span>= 6.000</span></div>
-<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>15 COINS 🪙</strong><span>= 9.000</span></div>
-<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>20 COINS 🪙</strong><span>= 12.000</span></div>
-<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>25 COINS 🪙</strong><span>= 15.000</span></div>
-<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>30 COINS 🪙</strong><span>= 18.000</span></div>
-<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>35 COINS 🪙</strong><span>= 21.000</span></div>
-<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>40 COINS 🪙</strong><span>= 24.000</span></div>
-<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>45 COINS 🪙</strong><span>= 27.000</span></div>
-<div class="gx-history-item" style="display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap"><strong>50 COINS 🪙</strong><span>= 30.000</span></div>
-</div>
-<div class="gx-history-empty" style="margin-top:18px;line-height:1.7;text-align:center">📢 Sebelum membeli coins pastikan kamu sudah login terlebih dahulu, karena proses pengiriman coins akan di kirim melalui username ✅</div>
+    <div class="gx-extra-page" id="gx-home-history" style="display:none"></div>
 </div>
 
 
@@ -1608,6 +1594,77 @@ if ("serviceWorker" in navigator) {
       localStorage.setItem("gx-crown-position", JSON.stringify({left:r.left,top:r.top}));
       setTimeout(() => { menu.dataset.dragged = "no"; }, 250);
     }
+  });
+})();
+</script>
+
+
+<style id="gx-buy-coins-style">
+#gx-buy-coins-modal {
+  display:none; position:fixed; inset:0; z-index:100001;
+  background:rgba(0,0,0,.82); align-items:center; justify-content:center;
+  padding:18px;
+}
+#gx-buy-coins-modal.gx-show { display:flex; }
+#gx-buy-coins-modal .gx-buy-panel {
+  width:100%; max-width:390px; max-height:82vh; overflow:auto;
+  padding:20px; border:1px solid #806cff; border-radius:18px;
+  background:linear-gradient(160deg,#17132e,#080b1b);
+  color:#fff; box-shadow:0 0 24px #7650d8;
+}
+#gx-buy-coins-modal h2 { text-align:center; color:#c9b5ff; margin:0 0 16px; }
+#gx-buy-coins-modal .gx-buy-row {
+  display:flex; justify-content:space-between; gap:12px;
+  padding:10px 12px; margin:7px 0; border:1px solid #39315f;
+  border-radius:10px; background:#211b3b; font-size:14px;
+}
+#gx-buy-coins-modal .gx-buy-wa,
+#gx-buy-coins-modal .gx-buy-close {
+  display:block; width:100%; margin-top:13px; padding:13px;
+  border:0; border-radius:11px; text-align:center; font-weight:900;
+  text-decoration:none; cursor:pointer;
+}
+#gx-buy-coins-modal .gx-buy-wa { background:#20c76a; color:#06180d; }
+#gx-buy-coins-modal .gx-buy-close { background:#393052; color:white; }
+</style>
+<div id="gx-buy-coins-modal" role="dialog" aria-modal="true" aria-label="Harga Coins">
+  <div class="gx-buy-panel">
+    <h2>🪙 HARGA COINS</h2>
+    <div id="gx-buy-coins-list"></div>
+    <p style="text-align:center;font-size:12px;line-height:1.6;margin:14px 0">
+      Pastikan sudah login. Sertakan username akun GANZ X saat menghubungi admin.
+    </p>
+    <a class="gx-buy-wa" id="gx-buy-coins-wa" href="https://wa.me/6285819385168?text=Halo%20admin%20GANZ%20X%20OFC%2C%20saya%20ingin%20membeli%20coins." target="_blank" rel="noopener noreferrer">💬 HUBUNGI WHATSAPP 085819385168</a>
+    <button type="button" class="gx-buy-close" id="gx-buy-coins-close">TUTUP</button>
+  </div>
+</div>
+<script>
+(() => {
+  const buyLink = document.querySelector(".gx-admin-link");
+  const modal = document.getElementById("gx-buy-coins-modal");
+  const list = document.getElementById("gx-buy-coins-list");
+  const close = document.getElementById("gx-buy-coins-close");
+  if (!buyLink || !modal || !list || !close) return;
+
+  list.innerHTML = Array.from({length:10}, (_,i) => {
+    const coins = (i+1)*5;
+    const price = (i+1)*3000;
+    return `<div class="gx-buy-row"><strong>${coins} COINS 🪙</strong><span>Rp${price.toLocaleString("id-ID")}</span></div>`;
+  }).join("");
+
+  buyLink.removeAttribute("target");
+  buyLink.removeAttribute("rel");
+  buyLink.href = "#beli-coins";
+  buyLink.addEventListener("click", e => {
+    e.preventDefault();
+    modal.classList.add("gx-show");
+  });
+  close.addEventListener("click", () => modal.classList.remove("gx-show"));
+  modal.addEventListener("click", e => {
+    if (e.target === modal) modal.classList.remove("gx-show");
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") modal.classList.remove("gx-show");
   });
 })();
 </script>
