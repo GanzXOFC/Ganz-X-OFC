@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "Caca",
-  "short_name": "Caca",
-  "description": "Caca - Free Fire Like",
+  "name": "GANZ X - OFC",
+  "short_name": "Ganz X - OFC",
+  "description": "GANZ X - OFC Free Fire Like",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#fceaf4",
-  "theme_color": "#f8ddec",
+  "background_color": "#050711",
+  "theme_color": "#080d1c",
   "icons": [
     {
       "src": "/static/icons/icon-192.png",
