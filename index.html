@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GANZ X - OFC</title>
+<title>Caca</title>
 
 <style>
 * {
@@ -1043,9 +1043,176 @@ body {
 .gx-home-history-note{text-align:center;font-size:11px;opacity:.8;margin-top:18px}
 @media(max-width:480px){#gx-home-like-history{padding:9px}.gx-home-history-columns{gap:6px}#gx-home-like-history .history-card{padding:7px;font-size:10px}.gx-home-history-columns h3{font-size:13px}}
 
+
+/* ===== CACA ANIME PASTEL THEME ===== */
+html {
+  background: #fceaf4 !important;
+}
+
+body {
+  background: transparent !important;
+  color: #654b68;
+}
+
+#space {
+  background:
+    radial-gradient(ellipse at 12% 15%, rgba(255,255,255,.95), transparent 34%),
+    radial-gradient(ellipse at 88% 25%, rgba(255,220,239,.9), transparent 38%),
+    radial-gradient(ellipse at 15% 85%, rgba(220,207,255,.75), transparent 40%),
+    linear-gradient(145deg, #ffeaf4 0%, #f6e8ff 48%, #e8eaff 100%) !important;
+}
+
+#stars {
+  display: none !important;
+}
+
+#space::before,
+#space::after {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  font-size: 48px;
+  opacity: .48;
+}
+
+#space::before {
+  content: "🌸";
+  top: 12%;
+  left: 4%;
+}
+
+#space::after {
+  content: "🎀";
+  right: 5%;
+  bottom: 13%;
+}
+
+@media (max-width: 480px) {
+  #space::before, #space::after {
+    font-size: 34px;
+  }
+}
+/* ===== END CACA ANIME PASTEL THEME ===== */
+
+
+
+/* ===== CACA ANIME: PANEL, TOMBOL, PROFIL ===== */
+body {
+  color: #65445f !important;
+}
+
+.profile {
+  border: 3px solid #f3a9d0 !important;
+  border-radius: 20px !important;
+  background: #fff0f8 !important;
+  box-shadow: 0 4px 14px #d98bb955 !important;
+}
+
+.profile-name,
+.profile-subtitle,
+.gx-welcome,
+.gx-title {
+  background: linear-gradient(90deg,#e879b2,#a987dc,#e99bc5) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.gx-description {
+  color: #805b83 !important;
+  -webkit-text-fill-color: #805b83 !important;
+}
+
+.gx-wa-button {
+  background: linear-gradient(110deg,#f5a8d0,#c9a9ef) !important;
+  border: 1px solid #edacd2 !important;
+  color: #663d68 !important;
+  box-shadow: 0 4px 12px #d99bc955 !important;
+}
+
+.gx-home-line {
+  background: linear-gradient(90deg,#f3a4ce,#c5a5ee,#f3a4ce) !important;
+  box-shadow: none !important;
+}
+
+.gx-extra-page,
+#gx-page-account,
+#gx-page-topcoins {
+  background: rgba(255,247,252,.94) !important;
+  color: #65445f !important;
+  border: 1px solid #efc1df !important;
+  box-shadow: 0 5px 18px #d69bc933 !important;
+}
+
+.gx-account-panel,
+#gx-profile-username,
+#gx-profile-coins,
+.gx-topcoin-name {
+  color: #65445f !important;
+}
+
+#gx-profile-avatar {
+  border: 3px solid #efaed2 !important;
+  background: #fff0f8 !important;
+  box-shadow: 0 4px 12px #d99bc955 !important;
+}
+
+.gx-profile-info,
+.gx-topcoin-row {
+  background: #fff0f8 !important;
+  border: 1px solid #f0c5df !important;
+  color: #65445f !important;
+}
+
+.gx-profile-caption,
+#gx-password-form h3,
+#gx-profile-message,
+.gx-topcoins-note,
+.gx-topcoin-rank {
+  color: #a35f91 !important;
+}
+
+#gx-password-form input {
+  background: #fff !important;
+  border: 1px solid #e8b8d7 !important;
+  color: #65445f !important;
+}
+
+.gx-profile-photo-button,
+#gx-password-form button,
+#gx-profile-logout,
+#gx-topcoins-refresh,
+.gx-account-panel [data-back-home] {
+  background: linear-gradient(110deg,#f3a5ce,#c7a7ed) !important;
+  border: 1px solid #e7a9d0 !important;
+  color: #633d68 !important;
+  box-shadow: 0 3px 9px #d99bc933 !important;
+}
+
+#gx-profile-logout {
+  background: linear-gradient(110deg,#f3b0c9,#e9a5b8) !important;
+}
+
+#gx-home-like-history {
+  background: #fff3fa !important;
+  border-color: #edc1dc !important;
+  color: #65445f !important;
+}
+
+#gx-home-like-history .history-card {
+  background: #fff !important;
+  border-color: #edc1dc !important;
+  color: #65445f !important;
+}
+
+#gx-home-like-history .history-time {
+  color: #a36c91 !important;
+}
+/* ===== END CACA ANIME ===== */
+
 </style>
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#080d1c">
+<meta name="theme-color" content="#f8ddec">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
