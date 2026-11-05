@@ -2128,5 +2128,136 @@ if ("serviceWorker" in navigator) {
 
 </style>
 
+
+<style id="caca-kawaii-final">
+/* CACA KAWAII - SOFT ROSE & PEACH */
+html {
+  background: #f8eff0 !important;
+}
+body {
+  background: transparent !important;
+  color: #765966 !important;
+}
+#space {
+  background:
+    radial-gradient(ellipse at 12% 18%,rgba(255,255,255,.85),transparent 35%),
+    radial-gradient(ellipse at 85% 20%,rgba(247,210,216,.48),transparent 38%),
+    radial-gradient(ellipse at 75% 85%,rgba(239,211,194,.42),transparent 40%),
+    linear-gradient(145deg,#f8eff0,#f5e8e4 48%,#eee4ed) !important;
+  overflow: hidden;
+}
+#space::before, #space::after {
+  font-size: 38px !important;
+  opacity: .34 !important;
+  animation: caca-float 7s ease-in-out infinite alternate;
+}
+#space::before { content:"🌸" !important; }
+#space::after {
+  content:"🌷" !important;
+  animation-delay: -3s;
+}
+@keyframes caca-float {
+  from { transform: translateY(0) rotate(-8deg); }
+  to { transform: translateY(-18px) rotate(9deg); }
+}
+
+/* Judul dan identitas */
+.profile-name,.profile-subtitle,.gx-welcome,.gx-title {
+  background: linear-gradient(90deg,#bd7894,#d69b83,#b783a7) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  -webkit-text-fill-color:transparent !important;
+}
+.gx-description { color:#896b78 !important; -webkit-text-fill-color:#896b78 !important; }
+
+/* Saldo koin */
+#gx-coin-label {
+  background: linear-gradient(120deg,#f0d2d5,#e8c3b8) !important;
+  color:#76515f !important;
+  border:1px solid #e5bdc5 !important;
+  box-shadow:0 4px 13px #bd879533 !important;
+}
+
+/* Musik */
+#gx-music-box {
+  background:rgba(255,246,242,.96) !important;
+  border:1px solid #e8c6c8 !important;
+  box-shadow:0 4px 14px #bd879533 !important;
+}
+#gx-music-box button,#gx-music-toggle {
+  background:linear-gradient(135deg,#e8b9c5,#d9a99e) !important;
+  color:#fff !important;
+  border:1px solid #f5dce0 !important;
+  box-shadow:0 3px 9px #bd879544 !important;
+}
+
+/* Navigasi bawah */
+#gx-bottom-nav {
+  background-image:none !important;
+  background:linear-gradient(115deg,#e8c2ca,#d9b7c8 55%,#e9c5b7) !important;
+  border:2px solid #f7e6e5 !important;
+  border-radius:30px !important;
+  box-shadow:0 7px 22px #a9798b44 !important;
+  padding-top:18px !important;
+}
+.gx-nav-free,.gx-nav-account,.gx-nav-top,.gx-nav-vip {
+  background:linear-gradient(145deg,#f5d9dc,#e7bec7) !important;
+  border:1px solid #f9e8e8 !important;
+  color:#986b7d !important;
+  box-shadow:0 3px 9px #a9798b33 !important;
+}
+.gx-nav-home {
+  background:linear-gradient(145deg,#e9b6c5,#d99eae,#edc6b7) !important;
+  border:3px solid #fff0ed !important;
+  color:#fff !important;
+  box-shadow:0 4px 15px #a9798b55 !important;
+}
+.gx-nav-btn span,.gx-nav-btn svg {
+  color:#875d70 !important;
+  stroke:currentColor !important;
+}
+.gx-nav-home svg { color:#fff !important; }
+
+/* Panel, riwayat, kartu */
+.gx-extra-page,#gx-page-account,#gx-page-topcoins,
+#gx-home-like-history {
+  background:rgba(255,248,243,.96) !important;
+  border:1px solid #ead0d0 !important;
+  color:#765966 !important;
+  box-shadow:0 5px 18px #bd879522 !important;
+}
+#gx-home-like-history h2 { color:#bd8299 !important; }
+.gx-profile-info,.gx-topcoin-row,
+#gx-home-like-history .history-card {
+  background:#fffaf6 !important;
+  border:1px solid #ead7d2 !important;
+  color:#765966 !important;
+}
+
+/* Tombol utama dan tombol admin */
+.gx-wa-button,.gx-admin-link,
+.gx-profile-photo-button,#gx-password-form button,
+#gx-profile-logout,#gx-topcoins-refresh,
+.gx-account-panel [data-back-home] {
+  background:linear-gradient(110deg,#e9b9c4,#e7c1ad) !important;
+  border:1px solid #e6bdc2 !important;
+  color:#754f60 !important;
+  box-shadow:0 4px 11px #bd879533 !important;
+}
+.gx-admin-link svg { fill:#25D366 !important; stroke:white !important; }
+
+#gx-password-form input {
+  background:#fffaf7 !important;
+  border-color:#e8c9c9 !important;
+  color:#765966 !important;
+}
+
+/* Hindari efek lama yang terlalu mencolok */
+.gx-home-line {
+  background:linear-gradient(90deg,#e7b9c5,#e9c9b4,#e7b9c5) !important;
+  box-shadow:none !important;
+}
+</style>
+
 </body>
 </html>
