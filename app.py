@@ -577,7 +577,7 @@ def home_page():
 def health():
     return jsonify({"name": "GANZ X - OFC", "status": "online", "version": "new-accounts"})
 
-if os.environ.get('SKIP_DB_INIT') != '1':
+if os.environ.get('RUN_DB_INIT') == '1':
     init_db()
 
 if __name__ == "__main__":
