@@ -32,6 +32,8 @@ def db_connect():
 
 def init_db():
     with db_connect() as db:
+        db.execute("SET statement_timeout = '60s'")
+        db.execute("SET lock_timeout = '10s'")
         db.execute("""
             CREATE TABLE IF NOT EXISTS accounts (
                 id BIGSERIAL PRIMARY KEY,
@@ -218,9 +220,9 @@ def upload_account_avatar(account):
     if not file:
         return jsonify({"ok": False, "message": "Pilih foto terlebih dahulu."}), 400
 
-    data = file.read(1024 * 1024 + 1)
-    if not data or len(data) > 1024 * 1024:
-        return jsonify({"ok": False, "message": "Ukuran foto maksimal 1 MB."}), 400
+    data = file.read(5 * 1024 * 1024 + 1)
+    if not data or len(data) > 5 * 1024 * 1024:
+        return jsonify({"ok": False, "message": "Ukuran foto maksimal 5 MB."}), 400
 
     if data.startswith(b"\x89PNG\r\n\x1a\n"):
         mime = "image/png"
@@ -575,7 +577,8 @@ def home_page():
 def health():
     return jsonify({"name": "GANZ X - OFC", "status": "online", "version": "new-accounts"})
 
-init_db()
+if os.environ.get('SKIP_DB_INIT') != '1':
+    init_db()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)

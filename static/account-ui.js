@@ -136,7 +136,7 @@
   async function loadTopCoins() {
     const list = document.getElementById("gx-topcoins-list");
     if (!list) return;
-    list.textContent = "Memuat leaderboard...";
+    list.textContent = "Memuat...";
     try {
       const response = await fetch("/api/leaderboard", {cache:"no-store"});
       const data = await response.json();
@@ -175,8 +175,8 @@
   document.getElementById("gx-avatar-file")?.addEventListener("change", async event => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (file.size > 1024 * 1024) {
-      $("#gx-profile-message").textContent = "Ukuran foto maksimal 1 MB.";
+    if (file.size > 5 * 1024 * 1024) {
+      $("#gx-profile-message").textContent = "Ukuran foto maksimal 5 MB.";
       event.target.value = "";
       return;
     }
@@ -192,7 +192,7 @@
       if (!response.ok) throw new Error(data.message || "Upload foto gagal.");
       account.avatar_url = data.avatar_url;
       setProfileAvatar(data.avatar_url);
-      $("#gx-profile-message").textContent = "Foto profil berhasil diperbarui.";
+      $("#gx-profile-message").textContent = "Foto profil berhasil diperbarui";
     } catch (error) {
       $("#gx-profile-message").textContent = error.message;
     }
@@ -206,7 +206,7 @@
       const result = await api("/api/account/name", {display_name});
       account.display_name = result.display_name;
       renderProfile();
-      $("#gx-profile-message").textContent = result.message || "Nama berhasil disimpan.";
+      $("#gx-profile-message").textContent = (result.message || "Nama berhasil disimpan").replace(/[.]+$/, "");
     } catch (error) {
       $("#gx-profile-message").textContent = error.message || "Gagal menyimpan nama.";
     }
@@ -367,21 +367,21 @@
     try {
       const result = await api("/api/like", {uid, region, service});
       const given = result.likes_given ?? result.LikesGivenByAPI ?? result.likesGiven ?? 0;
-      const before = result.likes_before ?? result.LikesbeforeCommand ?? "Belum diketahui";
-      const after = result.likes_after ?? result.LikesafterCommand ?? "Belum diketahui";
-      const nickname = result.nickname || result.player_nickname || result.PlayerNickname || "Tidak diketahui";
+      const before = result.likes_before ?? result.LikesbeforeCommand ?? "-";
+      const after = result.likes_after ?? result.LikesafterCommand ?? "-";
+      const nickname = result.nickname || result.player_nickname || result.PlayerNickname || "-";
 
       showResult(
         `👤 Nickname : ${nickname}
 🆔 UID : ${uid}
 🌍 Region : ${result.region || (service === 'free' ? 'ID' : region)}
+
 ❤️ Like sebelum : ${before}
 💗 Like sesudah : ${after}
 🎁 Like diberikan : ${given}
 
 📢 LIKE BERTAMBAH COINS DI KURANGI -${cost} ✅`
       );
-
       try {
         await refreshAccount();
       } catch (_) {}
@@ -402,10 +402,14 @@
           `👤 Nickname : ${d.nickname || "-"}
 🆔 UID : ${d.uid || uid}
 🌍 Region : ${d.region || (service === 'free' ? 'ID' : region)}
+
 ❤️ Like sebelum : ${d.likes_before ?? "-"}
 💗 Like sesudah : ${d.likes_after ?? "-"}
 🎁 Like diberikan : ${given}
-${given > 0 ? "" : "\n📢 LIKE DIBERIKAN 0 — COINS DIKEMBALIKAN ✅"}`
+
+${given === 0 && d.coins_refunded
+  ? "📢 LIKE DIBERIKAN 0 — COINS DIKEMBALIKAN ✅"
+  : "📢 LIKE GAGAL DIBERIKAN ❌"}`
         );
       }
       try {
@@ -434,7 +438,7 @@ ${given > 0 ? "" : "\n📢 LIKE DIBERIKAN 0 — COINS DIKEMBALIKAN ✅"}`
       message("Login terlebih dahulu untuk menggunakan kode redeem.");
       return;
     }
-    const code = prompt("Masukkan kode redeem 8 huruf:");
+    const code = prompt("Masukan kode redeem");
     if (code === null) return;
     redeemButton.disabled = true;
     try {

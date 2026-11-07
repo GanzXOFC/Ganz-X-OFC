@@ -888,7 +888,25 @@ body {
   font-size: 13px;
   font-weight: 900;
 }
-.gx-submit:disabled { opacity: .6; }
+.gx-submit {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+  touch-action: manipulation;
+}
+.gx-submit:active:not(:disabled) {
+  transform: scale(.96);
+  filter: brightness(1.2);
+  box-shadow: 0 0 18px rgba(119, 116, 255, .65);
+}
+.gx-submit:focus-visible {
+  outline: 2px solid #c5baff;
+  outline-offset: 3px;
+}
+.gx-submit:disabled {
+  opacity: .6;
+  cursor: wait;
+}
 .gx-message {
   display: none;
   margin-top: 14px;
@@ -1067,7 +1085,7 @@ body {
     </div>
     <div class="profile-info">
       <div class="profile-name">Ganz X - OFC</div>
-      <div class="profile-subtitle">Free Fire Like</div>
+      <div class="profile-subtitle">Like Free Fire</div>
     </div>
   </header>
 
@@ -1075,7 +1093,7 @@ body {
     <div id="gx-home-username" style="display:none;font-size:14px;font-weight:bold;margin-bottom:6px;color:#ffffff"></div>
     <div style="display:flex;justify-content:center;margin:0 auto 18px;"><button id="gx-login-welcome-btn" type="button" style="display:block!important;padding:10px 28px;border:1px solid #8b70ff;border-radius:12px;background:linear-gradient(90deg,#387dff,#b34dff);color:white;font-weight:800;font-size:15px;">LOGIN</button></div>
     <div class="gx-welcome">WELCOME TO</div>
-        <div class="gx-description">FREE FIRE LIKE</div>
+        <div class="gx-description">LIKE FREE FIRE</div>
 
     <div class="gx-admin">
       <a class="gx-admin-link"
@@ -1111,7 +1129,7 @@ body {
         <div><h3 class="gx-home-free-title">LIKE +50</h3><div id="gx-home-history-free">Memuat...</div></div>
         <div><h3 class="gx-home-vip-title">LIKE +220</h3><div id="gx-home-history-vip">Memuat...</div></div>
       </div>
-      <p class="gx-home-history-note">Waktu ditampilkan dalam WIB</p>
+
     </section>
 
     <div class="gx-signature">Ganz X - OFC</div>
@@ -1157,6 +1175,7 @@ body {
         </select>
       </label>
       <button class="gx-submit" type="submit">KIRIM LIKE</button>
+      <p style="text-align:center;margin:10px 0;font-size:14px;font-weight:700;color:#b99aff">GUNAKAN 1 COINS 🪙</p>
     </form>
     <div class="gx-message" role="status"></div>
 
@@ -1213,6 +1232,7 @@ body {
         </select>
       </label>
       <button class="gx-submit" type="submit">KIRIM LIKE</button>
+      <p style="text-align:center;margin:10px 0;font-size:14px;font-weight:700;color:#b99aff">GUNAKAN 5 COINS 🪙</p>
     </form>
     <div class="gx-message" role="status"></div>
 
@@ -1235,16 +1255,16 @@ body {
         </form>
         <div class="gx-profile-caption">USERNAME</div>
         <div id="gx-profile-username">Belum login</div>
-        <div class="gx-profile-caption">SALDO COINS</div>
-        <div id="gx-profile-coins">0</div>
+
       </div>
+      <p id="gx-profile-message" role="status"></p>
       <form id="gx-password-form">
         <h3>UBAH PASSWORD</h3>
         <input id="gx-current-password" type="password" placeholder="Password lama" required>
         <input id="gx-new-password" type="password" placeholder="Password baru (min. 8 karakter)" minlength="8" required>
         <button type="submit">SIMPAN PASSWORD</button>
       </form>
-      <p id="gx-profile-message" role="status"></p>
+
       <button id="gx-profile-logout" type="button">LOGOUT</button>
 
     </div>
@@ -1848,7 +1868,7 @@ if ("serviceWorker" in navigator) {
     <p style="text-align:center;font-size:12px;line-height:1.6;margin:14px 0">
       📢 Sebelum membeli coins pastikan anda sudah login terlebih dahulu, karena proses pengiriman coins akan di kirim melalui username ✅
     </p>
-    <a class="gx-buy-wa" id="gx-buy-coins-wa" href="https://wa.me/6285819385168?text=Halo%20admin%20GANZ%20X%20OFC%2C%20saya%20ingin%20membeli%20coins." target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.9 3 3 6.6 3 11c0 2.1.9 4 2.5 5.4L5 21l4.6-2.2c.8.2 1.6.3 2.4.3 5.1 0 9-3.6 9-8s-3.9-8.1-9-8.1Z" fill="#fff"/></svg><span>HUB ADMIN</span></a>
+    <a class="gx-buy-wa" id="gx-buy-coins-wa" href="https://wa.me/6285213698915?text=Halo%20Ka%20Caca%20%F0%9F%91%8B%0AMau%20beli%20coins%20web" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.9 3 3 6.6 3 11c0 2.1.9 4 2.5 5.4L5 21l4.6-2.2c.8.2 1.6.3 2.4.3 5.1 0 9-3.6 9-8s-3.9-8.1-9-8.1Z" fill="#fff"/></svg><span>HUB ADMIN</span></a>
     <button type="button" class="gx-buy-close" id="gx-buy-coins-close">TUTUP</button>
   </div>
 </div>
