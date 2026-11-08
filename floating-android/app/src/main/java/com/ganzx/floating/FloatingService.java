@@ -10,6 +10,10 @@ import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.IBinder;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.inputmethod.InputMethodManager;
+import android.webkit.JavascriptInterface;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -38,6 +42,8 @@ public class FloatingService extends Service {
 
     private boolean collapsed = true;
     private boolean panelAdded = false;
+    private boolean inputFocused = false;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     private final String website =
         "https://ganz-x-ofc-fsgd0.faable.link";
@@ -198,6 +204,8 @@ public class FloatingService extends Service {
 
         params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         params.y = dp(90);
+        params.softInputMode =
+            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
 
         windowManager.addView(root, params);
         panelAdded = true;
@@ -273,6 +281,9 @@ public class FloatingService extends Service {
         if (webView != null || root == null) return;
 
         webView = new WebView(this);
+        webView.setFocusable(true);
+        webView.setFocusableInTouchMode(true);
+        webView.addJavascriptInterface(new InputBridge(), "AndroidInput");
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -284,7 +295,32 @@ public class FloatingService extends Service {
 
         CookieManager.getInstance().setAcceptCookie(true);
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+
+                view.evaluateJavascript(
+                    "(function() {" +
+                    "if (window.ganzInputListenerAdded) return;" +
+                    "window.ganzInputListenerAdded = true;" +
+                    "document.addEventListener('focusin', function(e) {" +
+                    "var t = e.target;" +
+                    "if (t && (t.matches('input, textarea') || t.isContentEditable)) {" +
+                    "AndroidInput.onInputFocus();" +
+                    "}" +
+                    "}, true);" +
+                    "document.addEventListener('focusout', function(e) {" +
+                    "var t = e.target;" +
+                    "if (t && (t.matches('input, textarea') || t.isContentEditable)) {" +
+                    "AndroidInput.onInputBlur();" +
+                    "}" +
+                    "}, true);" +
+                    "})();",
+                    null
+                );
+            }
+        });
         webView.setWebChromeClient(new WebChromeClient());
 
         root.addView(webView, new LinearLayout.LayoutParams(
@@ -292,6 +328,59 @@ public class FloatingService extends Service {
         ));
 
         webView.loadUrl(website);
+    }
+
+    private class InputBridge {
+        @JavascriptInterface
+        public void onInputFocus() {
+            handler.post(() -> {
+                inputFocused = true;
+
+                if (params != null && root != null && panelAdded) {
+                    params.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+                    windowManager.updateViewLayout(root, params);
+
+                    if (webView != null) {
+                        webView.requestFocus();
+                        handler.postDelayed(() -> {
+                            InputMethodManager imm =
+                                (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+
+                            if (imm != null && webView != null) {
+                                imm.showSoftInput(
+                                    webView,
+                                    InputMethodManager.SHOW_IMPLICIT
+                                );
+                            }
+                        }, 200);
+                    }
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void onInputBlur() {
+            handler.post(() -> {
+                inputFocused = false;
+
+                handler.postDelayed(() -> {
+                    if (inputFocused || params == null ||
+                        root == null || !panelAdded) {
+                        return;
+                    }
+
+                    InputMethodManager imm =
+                        (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+
+                    if (imm != null && webView != null) {
+                        imm.hideSoftInputFromWindow(webView.getWindowToken(), 0);
+                    }
+
+                    params.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+                    windowManager.updateViewLayout(root, params);
+                }, 700);
+            });
+        }
     }
 
     private void removeWebView() {
