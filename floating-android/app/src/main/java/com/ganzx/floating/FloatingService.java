@@ -25,13 +25,19 @@ import android.widget.TextView;
 
 public class FloatingService extends Service {
 
+    private static final String ACTION_HIDE =
+        "com.ganzx.floating.HIDE";
+    private static final String ACTION_SHOW =
+        "com.ganzx.floating.SHOW";
+
     private WindowManager windowManager;
     private LinearLayout root;
-    private LinearLayout bar;
     private WebView webView;
     private WindowManager.LayoutParams params;
     private Button toggleButton;
+
     private boolean collapsed = true;
+    private boolean panelAdded = false;
 
     private final String website =
         "https://ganz-x-ofc-fsgd0.faable.link";
@@ -39,8 +45,25 @@ public class FloatingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        windowManager = (WindowManager)
+            getSystemService(WINDOW_SERVICE);
+
         createNotification();
         showPanel();
+    }
+
+    private PendingIntent serviceIntent(String action, int code) {
+        Intent intent = new Intent(this, FloatingService.class);
+        intent.setAction(action);
+
+        return PendingIntent.getService(
+            this,
+            code,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT |
+            PendingIntent.FLAG_IMMUTABLE
+        );
     }
 
     private void createNotification() {
@@ -52,36 +75,95 @@ public class FloatingService extends Service {
                 "GANZ X Floating Panel",
                 NotificationManager.IMPORTANCE_LOW
             );
+
             getSystemService(NotificationManager.class)
                 .createNotificationChannel(channel);
         }
 
         Intent open = new Intent(this, MainActivity.class);
+
         PendingIntent pending = PendingIntent.getActivity(
             this, 0, open,
             PendingIntent.FLAG_UPDATE_CURRENT |
             PendingIntent.FLAG_IMMUTABLE
         );
 
-        Notification notification = new Notification.Builder(this, channelId)
-            .setContentTitle("GANZ X Floating Panel aktif")
+        Notification notification = new Notification.Builder(
+            this, channelId
+        )
+            .setContentTitle("GANZ X Floating Panel")
             .setContentText("Panel Like Free Fire sedang berjalan")
             .setSmallIcon(android.R.drawable.ic_menu_view)
             .setContentIntent(pending)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                "SEMBUNYIKAN PANEL",
+                serviceIntent(ACTION_HIDE, 11)
+            )
             .build();
 
         startForeground(1, notification);
     }
 
+    private void updateNotification() {
+        NotificationManager manager =
+            getSystemService(NotificationManager.class);
+
+        Notification.Builder builder;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder = new Notification.Builder(this, "ganz_floating");
+        } else {
+            builder = new Notification.Builder(this);
+        }
+
+        Intent open = new Intent(this, MainActivity.class);
+
+        PendingIntent pending = PendingIntent.getActivity(
+            this, 0, open,
+            PendingIntent.FLAG_UPDATE_CURRENT |
+            PendingIntent.FLAG_IMMUTABLE
+        );
+
+        builder
+            .setContentTitle("GANZ X Floating Panel")
+            .setContentText(
+                panelAdded
+                    ? "Panel sedang tampil"
+                    : "Panel disembunyikan sementara"
+            )
+            .setSmallIcon(android.R.drawable.ic_menu_view)
+            .setContentIntent(pending)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true);
+
+        if (panelAdded) {
+            builder.addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                "SEMBUNYIKAN PANEL",
+                serviceIntent(ACTION_HIDE, 11)
+            );
+        } else {
+            builder.addAction(
+                android.R.drawable.ic_menu_view,
+                "TAMPILKAN PANEL",
+                serviceIntent(ACTION_SHOW, 12)
+            );
+        }
+
+        manager.notify(1, builder.build());
+    }
+
     private void showPanel() {
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        if (panelAdded) return;
 
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.rgb(15, 18, 35));
 
-        bar = new LinearLayout(this);
+        LinearLayout bar = new LinearLayout(this);
         bar.setGravity(Gravity.CENTER_VERTICAL);
         bar.setPadding(10, 4, 6, 4);
         bar.setBackgroundColor(Color.rgb(35, 48, 100));
@@ -117,6 +199,7 @@ public class FloatingService extends Service {
         params.y = dp(90);
 
         windowManager.addView(root, params);
+        panelAdded = true;
 
         toggleButton.setOnClickListener(v -> togglePanel());
         close.setOnClickListener(v -> stopSelf());
@@ -149,6 +232,24 @@ public class FloatingService extends Service {
                 return false;
             }
         });
+
+        updateNotification();
+    }
+
+    private void hidePanel() {
+        if (!panelAdded) return;
+
+        removeWebView();
+
+        if (root != null) {
+            windowManager.removeView(root);
+            root = null;
+        }
+
+        panelAdded = false;
+        toggleButton = null;
+
+        updateNotification();
     }
 
     private void togglePanel() {
@@ -168,7 +269,7 @@ public class FloatingService extends Service {
     }
 
     private void createWebView() {
-        if (webView != null) return;
+        if (webView != null || root == null) return;
 
         webView = new WebView(this);
 
@@ -198,7 +299,10 @@ public class FloatingService extends Service {
         webView.stopLoading();
         webView.onPause();
 
-        root.removeView(webView);
+        if (root != null) {
+            root.removeView(webView);
+        }
+
         webView.destroy();
         webView = null;
     }
@@ -210,6 +314,14 @@ public class FloatingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && intent.getAction() != null) {
+            if (ACTION_HIDE.equals(intent.getAction())) {
+                hidePanel();
+            } else if (ACTION_SHOW.equals(intent.getAction())) {
+                showPanel();
+            }
+        }
+
         return START_STICKY;
     }
 
@@ -217,9 +329,10 @@ public class FloatingService extends Service {
     public void onDestroy() {
         removeWebView();
 
-        if (root != null && windowManager != null) {
+        if (panelAdded && root != null) {
             windowManager.removeView(root);
             root = null;
+            panelAdded = false;
         }
 
         super.onDestroy();
