@@ -26,10 +26,12 @@ import android.widget.TextView;
 public class FloatingService extends Service {
 
     private WindowManager windowManager;
-    private View panel;
+    private LinearLayout root;
+    private LinearLayout bar;
     private WebView webView;
     private WindowManager.LayoutParams params;
-    private boolean collapsed = false;
+    private Button toggleButton;
+    private boolean collapsed = true;
 
     private final String website =
         "https://ganz-x-ofc-fsgd0.faable.link";
@@ -75,11 +77,11 @@ public class FloatingService extends Service {
     private void showPanel() {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
-        LinearLayout root = new LinearLayout(this);
+        root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.rgb(15, 18, 35));
 
-        LinearLayout bar = new LinearLayout(this);
+        bar = new LinearLayout(this);
         bar.setGravity(Gravity.CENTER_VERTICAL);
         bar.setPadding(10, 4, 6, 4);
         bar.setBackgroundColor(Color.rgb(35, 48, 100));
@@ -89,43 +91,22 @@ public class FloatingService extends Service {
         title.setTextColor(Color.WHITE);
         title.setTextSize(14);
         title.setPadding(4, 8, 4, 8);
-        bar.addView(title, new LinearLayout.LayoutParams(
-            0, -2, 1
-        ));
 
-        Button minimize = new Button(this);
-        minimize.setText("—");
-        bar.addView(minimize);
+        bar.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+
+        toggleButton = new Button(this);
+        toggleButton.setText("□");
+        bar.addView(toggleButton);
 
         Button close = new Button(this);
         close.setText("X");
         bar.addView(close);
 
-        root.addView(bar, new LinearLayout.LayoutParams(
-            -1, dp(44)
-        ));
-
-        webView = new WebView(this);
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setDatabaseEnabled(true);
-        settings.setLoadsImagesAutomatically(true);
-        settings.setSupportZoom(false);
-        settings.setAllowFileAccess(false);
-
-        CookieManager.getInstance().setAcceptCookie(true);
-        webView.setWebViewClient(new WebViewClient());
-        webView.setWebChromeClient(new WebChromeClient());
-        webView.loadUrl(website);
-
-        root.addView(webView, new LinearLayout.LayoutParams(
-            -1, 0, 1
-        ));
+        root.addView(bar, new LinearLayout.LayoutParams(-1, dp(48)));
 
         params = new WindowManager.LayoutParams(
             getResources().getDisplayMetrics().widthPixels - dp(24),
-            dp(480),
+            dp(48),
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL |
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
@@ -135,17 +116,9 @@ public class FloatingService extends Service {
         params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         params.y = dp(90);
 
-        panel = root;
-        windowManager.addView(panel, params);
+        windowManager.addView(root, params);
 
-        minimize.setOnClickListener(v -> {
-            collapsed = !collapsed;
-            webView.setVisibility(collapsed ? View.GONE : View.VISIBLE);
-            params.height = collapsed ? dp(48) : dp(480);
-            windowManager.updateViewLayout(panel, params);
-            minimize.setText(collapsed ? "□" : "—");
-        });
-
+        toggleButton.setOnClickListener(v -> togglePanel());
         close.setOnClickListener(v -> stopSelf());
 
         bar.setOnTouchListener(new View.OnTouchListener() {
@@ -163,9 +136,14 @@ public class FloatingService extends Service {
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
-                        params.x = startX + (int)(event.getRawX() - touchX);
-                        params.y = startY + (int)(event.getRawY() - touchY);
-                        windowManager.updateViewLayout(panel, params);
+                        params.x = startX +
+                            (int)(event.getRawX() - touchX);
+                        params.y = startY +
+                            (int)(event.getRawY() - touchY);
+                        windowManager.updateViewLayout(root, params);
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
                         return true;
                 }
                 return false;
@@ -173,8 +151,61 @@ public class FloatingService extends Service {
         });
     }
 
+    private void togglePanel() {
+        collapsed = !collapsed;
+
+        if (collapsed) {
+            removeWebView();
+            params.height = dp(48);
+            toggleButton.setText("□");
+        } else {
+            createWebView();
+            params.height = dp(480);
+            toggleButton.setText("—");
+        }
+
+        windowManager.updateViewLayout(root, params);
+    }
+
+    private void createWebView() {
+        if (webView != null) return;
+
+        webView = new WebView(this);
+
+        WebSettings settings = webView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        settings.setLoadsImagesAutomatically(true);
+        settings.setSupportZoom(false);
+        settings.setAllowFileAccess(false);
+
+        CookieManager.getInstance().setAcceptCookie(true);
+
+        webView.setWebViewClient(new WebViewClient());
+        webView.setWebChromeClient(new WebChromeClient());
+
+        root.addView(webView, new LinearLayout.LayoutParams(
+            -1, 0, 1
+        ));
+
+        webView.loadUrl(website);
+    }
+
+    private void removeWebView() {
+        if (webView == null) return;
+
+        webView.stopLoading();
+        webView.onPause();
+
+        root.removeView(webView);
+        webView.destroy();
+        webView = null;
+    }
+
     private int dp(int value) {
-        return (int)(value * getResources().getDisplayMetrics().density);
+        return (int)(value *
+            getResources().getDisplayMetrics().density);
     }
 
     @Override
@@ -184,14 +215,13 @@ public class FloatingService extends Service {
 
     @Override
     public void onDestroy() {
-        if (panel != null && windowManager != null) {
-            windowManager.removeView(panel);
-            panel = null;
+        removeWebView();
+
+        if (root != null && windowManager != null) {
+            windowManager.removeView(root);
+            root = null;
         }
-        if (webView != null) {
-            webView.destroy();
-            webView = null;
-        }
+
         super.onDestroy();
     }
 
