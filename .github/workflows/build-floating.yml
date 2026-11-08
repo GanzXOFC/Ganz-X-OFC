@@ -21,10 +21,10 @@ jobs:
           java-version: '17'
 
       - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses
+        run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Install SDK platform
-        run: sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
+        run: /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-35" "build-tools;35.0.0"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
