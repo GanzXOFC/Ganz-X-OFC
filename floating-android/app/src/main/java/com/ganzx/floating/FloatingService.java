@@ -29,6 +29,8 @@ import android.widget.TextView;
 
 public class FloatingService extends Service {
 
+    public static volatile boolean isRunning = false;
+
     private static final String ACTION_HIDE =
         "com.ganzx.floating.HIDE";
     private static final String ACTION_SHOW =
@@ -51,6 +53,7 @@ public class FloatingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        isRunning = true;
 
         windowManager = (WindowManager)
             getSystemService(WINDOW_SERVICE);
@@ -417,6 +420,7 @@ public class FloatingService extends Service {
 
     @Override
     public void onDestroy() {
+        isRunning = false;
         removeWebView();
 
         if (panelAdded && root != null) {

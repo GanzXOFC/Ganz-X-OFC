@@ -8,7 +8,7 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
-        android:label="GANZ X Floating Panel"
+        android:label="Caca"
         android:usesCleartextTraffic="false"
         android:hardwareAccelerated="true">
 
