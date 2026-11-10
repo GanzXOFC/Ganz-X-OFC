@@ -480,7 +480,7 @@ ${given === 0 && d.coins_refunded
   });
 
 
-  // GANZ X - OFC: Global BLUK click sound
+  // GANZ X - OFC: Improved BLUK click sound
   document.addEventListener("click", event => {
     const el = event.target instanceof Element
       ? event.target.closest('button, input[type="button"], input[type="submit"], [role="button"]')
@@ -495,25 +495,33 @@ ${given === 0 && d.coins_refunded
       const ctx = window.__gxClickAudioContext ||
         (window.__gxClickAudioContext = new AudioCtx());
 
-      if (ctx.state === "suspended") ctx.resume();
+      const playBluk = () => {
+        if (ctx.state !== "running") return;
 
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const now = ctx.currentTime;
 
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(190, now);
-      osc.frequency.exponentialRampToValueAtTime(75, now + 0.12);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(230, now);
+        osc.frequency.exponentialRampToValueAtTime(65, now + 0.17);
 
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.13, now + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.22, now + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.20);
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
 
-      osc.start(now);
-      osc.stop(now + 0.16);
+        osc.start(now);
+        osc.stop(now + 0.21);
+      };
+
+      if (ctx.state === "suspended") {
+        ctx.resume().then(playBluk).catch(() => {});
+      } else {
+        playBluk();
+      }
     } catch (_) {}
   }, true);
 
