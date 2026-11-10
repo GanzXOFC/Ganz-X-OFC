@@ -480,7 +480,11 @@ ${given === 0 && d.coins_refunded
   });
 
 
-  // GANZ X - OFC: PLEKK v7
+  // GANZ X - OFC: Original TikTok Button Sound
+  const gxButtonClickAudio = new Audio("/static/music/button-click.mp3");
+  gxButtonClickAudio.preload = "auto";
+  gxButtonClickAudio.volume = 0.85;
+
   document.addEventListener("click", event => {
     const el = event.target instanceof Element
       ? event.target.closest('button, input[type="button"], input[type="submit"], [role="button"]')
@@ -489,93 +493,10 @@ ${given === 0 && d.coins_refunded
     if (!el || el.disabled || el.dataset.noSound === "true") return;
 
     try {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-
-      const ctx = window.__gxClickAudioContext ||
-        (window.__gxClickAudioContext = new AudioCtx());
-
-      const playSound = () => {
-        if (ctx.state !== "running") return;
-
-        const now = ctx.currentTime;
-        const master = ctx.createGain();
-        const limiter = ctx.createDynamicsCompressor();
-
-        master.gain.value = 0.95;
-        limiter.threshold.value = -10;
-        limiter.knee.value = 12;
-        limiter.ratio.value = 5;
-        master.connect(limiter);
-        limiter.connect(ctx.destination);
-
-        // Sharp PLEK transient
-        const length = Math.floor(ctx.sampleRate * 0.055);
-        const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-
-        for (let i = 0; i < length; i++) {
-          const fade = Math.pow(1 - i / length, 3);
-          data[i] = (Math.random() * 2 - 1) * fade;
-        }
-
-        const noise = ctx.createBufferSource();
-        const filter = ctx.createBiquadFilter();
-        const noiseGain = ctx.createGain();
-
-        noise.buffer = buffer;
-        filter.type = "bandpass";
-        filter.frequency.value = 1800;
-        filter.Q.value = 0.8;
-
-        noiseGain.gain.setValueAtTime(0.0001, now);
-        noiseGain.gain.exponentialRampToValueAtTime(0.38, now + 0.004);
-        noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
-
-        noise.connect(filter);
-        filter.connect(noiseGain);
-        noiseGain.connect(master);
-        noise.start(now);
-
-        // Rounded bright main tone
-        const osc = ctx.createOscillator();
-        const toneGain = ctx.createGain();
-
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(720, now);
-        osc.frequency.exponentialRampToValueAtTime(260, now + 0.22);
-
-        toneGain.gain.setValueAtTime(0.0001, now);
-        toneGain.gain.exponentialRampToValueAtTime(0.62, now + 0.009);
-        toneGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.27);
-
-        osc.connect(toneGain);
-        toneGain.connect(master);
-        osc.start(now);
-        osc.stop(now + 0.28);
-
-        // Bright little pop
-        const pop = ctx.createOscillator();
-        const popGain = ctx.createGain();
-
-        pop.type = "sine";
-        pop.frequency.setValueAtTime(1150, now);
-        pop.frequency.exponentialRampToValueAtTime(480, now + 0.11);
-
-        popGain.gain.setValueAtTime(0.0001, now);
-        popGain.gain.exponentialRampToValueAtTime(0.20, now + 0.006);
-        popGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
-
-        pop.connect(popGain);
-        popGain.connect(master);
-        pop.start(now);
-        pop.stop(now + 0.15);
-      };
-
-      if (ctx.state === "suspended") {
-        ctx.resume().then(playSound).catch(() => {});
-      } else {
-        playSound();
+      gxButtonClickAudio.currentTime = 0;
+      const playback = gxButtonClickAudio.play();
+      if (playback && typeof playback.catch === "function") {
+        playback.catch(() => {});
       }
     } catch (_) {}
   }, true);
