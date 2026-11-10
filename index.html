@@ -1686,17 +1686,10 @@ body {
 
   async function refreshHistory() {
     if (!homeHistoryFree || !homeHistoryVip) return;
-    const token = localStorage.getItem("gx_account_token") || "";
-    if (!token) {
-      const msg = '<p class="gx-home-history-empty">Silakan login terlebih dahulu.</p>';
-      homeHistoryFree.innerHTML = msg;
-      homeHistoryVip.innerHTML = msg;
-      return;
-    }
     homeHistoryFree.innerHTML = '<p class="gx-home-history-empty">Memuat...</p>';
     homeHistoryVip.innerHTML = '<p class="gx-home-history-empty">Memuat...</p>';
     try {
-      const response = await fetch("/api/history", {headers: {"X-Account-Token": token}});
+      const response = await fetch("/api/history");
       const data = await response.json();
       if (!response.ok) {
         const msg = '<p class="gx-home-history-empty">' + escapeText(data.message || "Gagal mengambil riwayat.") + '</p>';

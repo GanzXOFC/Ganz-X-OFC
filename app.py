@@ -631,18 +631,19 @@ def send_like(account):
 
 
 @app.get("/api/history")
-@login_required
-def like_history(account):
+def like_history():
     with db_connect() as db:
         rows = db.execute("""
-            SELECT id, service, uid, region, status, likes_given,
-                   likes_before, likes_after, message,
-                   COALESCE(created_at, CURRENT_TIMESTAMP) AS created_at
-            FROM like_history
-            WHERE account_id = %s AND likes_given > 0
-            ORDER BY id DESC
+            SELECT h.id, h.service, h.uid, h.region, h.status, h.likes_given,
+                   h.likes_before, h.likes_after, h.message,
+                   COALESCE(h.created_at, CURRENT_TIMESTAMP) AS created_at,
+                   COALESCE(NULLIF(a.display_name, ''), a.username) AS username
+            FROM like_history h
+            JOIN accounts a ON a.id = h.account_id
+            WHERE h.status = 'success' AND h.likes_given > 0
+            ORDER BY h.id DESC
             LIMIT 50
-        """, (account["id"],)).fetchall()
+        """).fetchall()
     return jsonify([dict(row) for row in rows])
 
 @app.get("/manifest.json")
