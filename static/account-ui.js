@@ -481,7 +481,7 @@ ${given === 0 && d.coins_refunded
 
 
   // GANZ X - OFC: Original TikTok Button Sound
-  const gxButtonClickAudio = new Audio("/static/music/button-click.mp3");
+  const gxButtonClickAudio = new Audio("/static/music/button-click.mp3?v=2");
   gxButtonClickAudio.preload = "auto";
   gxButtonClickAudio.volume = 0.85;
 
