@@ -63,6 +63,12 @@ def init_db():
             ALTER TABLE accounts ALTER COLUMN display_name SET DEFAULT 'Ganz X - OFC'
         """)
         db.execute("""
+            ALTER TABLE accounts ADD COLUMN IF NOT EXISTS name_color TEXT NOT NULL DEFAULT 'white'
+        """)
+        db.execute("""
+            ALTER TABLE accounts ADD COLUMN IF NOT EXISTS crown_enabled BOOLEAN NOT NULL DEFAULT FALSE
+        """)
+        db.execute("""
             CREATE UNIQUE INDEX IF NOT EXISTS accounts_username_lower_idx
             ON accounts (LOWER(username))
         """)
@@ -92,6 +98,12 @@ def init_db():
 
 
         db.execute("""
+            CREATE INDEX IF NOT EXISTS like_history_account_success_idx
+            ON like_history (account_id)
+            WHERE status='success' AND likes_given > 0
+        """)
+
+        db.execute("""
             CREATE TABLE IF NOT EXISTS redeem_codes (
                 code TEXT PRIMARY KEY,
                 coins BIGINT NOT NULL CHECK(coins > 0),
@@ -117,7 +129,7 @@ def current_account():
         return None
     with db_connect() as db:
         return db.execute("""
-            SELECT a.id, a.username, a.coins, a.display_name, a.avatar_version
+            SELECT a.id, a.username, a.coins, a.display_name, a.avatar_version, a.name_color, a.crown_enabled
             FROM account_sessions s JOIN accounts a ON a.id=s.account_id
             WHERE s.token=%s
         """, (token,)).fetchone()
@@ -136,11 +148,23 @@ def account_info():
     account = current_account()
     if not account:
         return jsonify({"logged_in": False})
+
+    with db_connect() as db:
+        row = db.execute("""
+            SELECT COALESCE(SUM(CASE WHEN service='vip' THEN 5 ELSE 1 END), 0) AS total_spent
+            FROM like_history
+            WHERE account_id=%s AND status='success' AND likes_given > 0
+        """, (account["id"],)).fetchone()
+
+    total_spent = int(row["total_spent"] or 0)
     return jsonify({
         "logged_in": True,
         "username": account["username"],
         "display_name": account.get("display_name") or "Ganz X - OFC",
         "coins": account["coins"],
+        "name_color": account.get("name_color") or "white",
+        "crown_enabled": bool(account.get("crown_enabled", False)),
+        "total_spent": total_spent,
         "avatar_url": f"/api/avatar/{account['id']}?v={secrets.token_hex(8)}"
     })
 
@@ -159,6 +183,80 @@ def update_account_name(account):
         )
     return jsonify({"ok": True, "display_name": display_name,
                     "message": "Nama tampilan berhasil disimpan."})
+
+
+@app.post("/api/account/name-color")
+@login_required
+def update_account_name_color(account):
+    data = request.get_json(silent=True) or {}
+    color = str(data.get("color", "white")).strip().lower()
+    thresholds = {"white": 0, "red": 20, "blue": 50, "gradient": 100}
+    if color not in thresholds:
+        return jsonify({"ok": False, "message": "Warna tidak valid."}), 400
+
+    with db_connect() as db:
+        row = db.execute("""
+            SELECT COALESCE(SUM(CASE WHEN service='vip' THEN 5 ELSE 1 END), 0) AS total_spent
+            FROM like_history
+            WHERE account_id=%s AND status='success' AND likes_given > 0
+        """, (account["id"],)).fetchone()
+        total_spent = int(row["total_spent"] or 0)
+
+        if total_spent < thresholds[color]:
+            return jsonify({
+                "ok": False,
+                "message": f"Warna ini terbuka setelah menghabiskan {thresholds[color]} Coins.",
+                "total_spent": total_spent
+            }), 403
+
+        db.execute(
+            "UPDATE accounts SET name_color=%s WHERE id=%s",
+            (color, account["id"])
+        )
+
+    unlocked = [name for name, cost in thresholds.items() if total_spent >= cost]
+    return jsonify({
+        "ok": True,
+        "name_color": color,
+        "total_spent": total_spent,
+        "unlocked_colors": unlocked,
+        "message": "Warna nama berhasil diganti."
+    })
+
+
+@app.post("/api/account/crown")
+@login_required
+def update_account_crown(account):
+    data = request.get_json(silent=True) or {}
+    enabled = bool(data.get("enabled", False))
+
+    with db_connect() as db:
+        row = db.execute("""
+            SELECT COALESCE(SUM(CASE WHEN service='vip' THEN 5 ELSE 1 END), 0) AS total_spent
+            FROM like_history
+            WHERE account_id=%s AND status='success' AND likes_given > 0
+        """, (account["id"],)).fetchone()
+
+        total_spent = int(row["total_spent"] or 0)
+
+        if enabled and total_spent < 500:
+            return jsonify({
+                "ok": False,
+                "message": "Mahkota terbuka setelah menggunakan 500 Coins.",
+                "total_spent": total_spent
+            }), 403
+
+        db.execute(
+            "UPDATE accounts SET crown_enabled=%s WHERE id=%s",
+            (enabled, account["id"])
+        )
+
+    return jsonify({
+        "ok": True,
+        "crown_enabled": enabled,
+        "total_spent": total_spent,
+        "message": "Mahkota berhasil diaktifkan." if enabled else "Mahkota berhasil dinonaktifkan."
+    })
 
 
 @app.post("/api/register")
@@ -274,22 +372,26 @@ def change_account_password(account):
 def account_leaderboard():
     with db_connect() as db:
         rows = db.execute("""
-            SELECT id, username, coins, avatar_version
+            SELECT id, display_name, name_color, coins, avatar_version, crown_enabled
             FROM accounts
             ORDER BY coins DESC, id ASC
             LIMIT 100
         """).fetchall()
 
     result = []
+    allowed_colors = {"white", "red", "blue", "gradient"}
     for rank, row in enumerate(rows, 1):
-        username = str(row["username"] or "")
-        visible = (len(username) + 1) // 2
-        masked = username[:visible] + "*" * (len(username) - visible)
+        name_color = str(row["name_color"] or "white").lower()
+        if name_color not in allowed_colors:
+            name_color = "white"
+
         result.append({
             "rank": rank,
-            "username": masked,
+            "display_name": row["display_name"] or "Ganz X - OFC",
+            "name_color": name_color,
             "coins": row["coins"],
-            "avatar_url": f"/api/avatar/{row['id']}?v={row['avatar_version']}"
+            "avatar_url": f"/api/avatar/{row['id']}?v={row['avatar_version']}",
+            "crown_enabled": bool(row["crown_enabled"])
         })
     return jsonify({"ok": True, "users": result})
 

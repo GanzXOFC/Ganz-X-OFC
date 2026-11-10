@@ -91,7 +91,10 @@
     const username = account.username || account.name || "AKUN";
     const displayName = account.display_name || "Ganz X - OFC";
     const headerName = document.querySelector(".profile-header .profile-name");
-    if (headerName) headerName.textContent = displayName;
+    if (headerName) {
+      headerName.textContent = displayName;
+      headerName.dataset.nameColor = account.name_color || "white";
+    }
     const homeUsername = document.getElementById("gx-home-username");
     if (homeUsername) {
       homeUsername.textContent = "👤 " + username;
@@ -121,11 +124,128 @@
     const headerName = document.querySelector(".profile-header .profile-name");
     const displayName = account.display_name || "Ganz X - OFC";
     if (displayNameInput && document.activeElement !== displayNameInput) displayNameInput.value = displayName;
-    if (headerName) headerName.textContent = displayName;
+    if (headerName) {
+      headerName.textContent = displayName;
+      headerName.dataset.nameColor = account.name_color || "white";
+    }
+    renderNameColorControls();
+    renderCrownControls();
+    const crownVisible = !!account.crown_enabled;
+    const homeCrown = document.getElementById("gx-home-crown");
+    const accountCrown = document.getElementById("gx-account-crown");
+    if (homeCrown) homeCrown.style.display = crownVisible ? "block" : "none";
+    if (accountCrown) accountCrown.style.display = crownVisible ? "block" : "none";
     if (usernameBox) usernameBox.textContent = account.username || "AKUN";
     if (coinsBox) coinsBox.textContent = "🪙 " + (account.coins ?? 0);
     setProfileAvatar(account.avatar_url || "/static/profil.webp");
   }
+
+  function renderNameColorControls() {
+    const panel = document.getElementById("gx-name-color-panel");
+    const progress = document.getElementById("gx-name-color-progress");
+    const options = document.getElementById("gx-name-color-options");
+    if (!panel || !progress || !options) return;
+
+    if (!account) {
+      progress.textContent = "Login untuk melihat progres warna.";
+      options.innerHTML = "";
+      return;
+    }
+
+    const spent = Number(account.total_spent || 0);
+    const unlocked = ["white", ...(spent >= 20 ? ["red"] : []),
+      ...(spent >= 50 ? ["blue"] : []), ...(spent >= 100 ? ["gradient"] : [])];
+    const current = account.name_color || "white";
+    progress.textContent = `Total Coins ${spent} / 100`;
+
+    const choices = [
+      {id:"white", label:"WHITE", cost:0, color:"#ffffff"},
+      {id:"red", label:"RED", cost:20, color:"#ff4242"},
+      {id:"blue", label:"BLUE", cost:50, color:"#398cff"},
+      {id:"gradient", label:"BLUE NEON", cost:100, color:"#b879ff"}
+    ];
+
+    options.innerHTML = choices.map(item => {
+      const open = unlocked.includes(item.id);
+      const selected = current === item.id;
+      return `<button type="button" data-gx-name-color="${item.id}"
+        ${open ? "" : "disabled"}
+        style="width:100%;margin:0;padding:10px;border-radius:9px;border:1px solid ${selected ? item.color : "#514174"};
+        background:${selected ? "#29203d" : "#171326"};color:${item.color};font-weight:900;opacity:${open ? "1" : ".48"};">
+        ${item.label}${selected ? "" : open ? "" : ` ${item.cost} COINS 🔒`}
+      </button>`;
+    }).join("");
+  }
+
+  function renderCrownControls() {
+    const progress = document.getElementById("gx-crown-progress");
+    const options = document.getElementById("gx-crown-options");
+    if (!progress || !options) return;
+
+    if (!account) {
+      progress.textContent = "Login untuk melihat progres mahkota.";
+      options.innerHTML = "";
+      return;
+    }
+
+    const spent = Number(account.total_spent || 0);
+    const unlocked = spent >= 500;
+    const enabled = !!account.crown_enabled;
+
+    progress.textContent = `Total Coins ${spent} / 500`;
+
+    options.innerHTML = `<button type="button" id="gx-crown-toggle"
+      ${unlocked ? "" : "disabled"}
+      style="width:100%;padding:10px;border-radius:9px;border:1px solid ${enabled ? "#ffd700" : "#514174"};
+      background:${enabled ? "#302716" : "#171326"};color:${unlocked ? "#ffd700" : "#c8b9e8"};
+      font-weight:900;opacity:${unlocked ? "1" : ".48"};">
+      ${!unlocked ? "500 COINS 🔒" : enabled ? "MATIKAN" : "AKTIFKAN"}
+    </button>`;
+  }
+
+  document.getElementById("gx-crown-options")?.addEventListener("click", async event => {
+    const button = event.target.closest("#gx-crown-toggle");
+    if (!button || button.disabled) return;
+
+    button.disabled = true;
+    try {
+      const result = await api("/api/account/crown", {
+        enabled: !account.crown_enabled
+      });
+      account.crown_enabled = result.crown_enabled;
+      account.total_spent = result.total_spent;
+      renderProfile();
+
+      const msg = document.getElementById("gx-profile-message");
+      if (msg) msg.textContent = result.message;
+    } catch (error) {
+      const msg = document.getElementById("gx-profile-message");
+      if (msg) msg.textContent = error.message || "Gagal mengubah mahkota.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  document.getElementById("gx-name-color-options")?.addEventListener("click", async event => {
+    const button = event.target.closest("[data-gx-name-color]");
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    try {
+      const result = await api("/api/account/name-color", {
+        color: button.dataset.gxNameColor
+      });
+      account.name_color = result.name_color;
+      account.total_spent = result.total_spent;
+      renderProfile();
+      const msg = document.getElementById("gx-profile-message");
+      if (msg) msg.textContent = result.message || "Warna nama berhasil diganti.";
+    } catch (error) {
+      const msg = document.getElementById("gx-profile-message");
+      if (msg) msg.textContent = error.message || "Gagal mengganti warna.";
+    } finally {
+      button.disabled = false;
+    }
+  });
 
   function escapeHtml(value) {
     const el = document.createElement("span");
@@ -148,8 +268,11 @@
       list.innerHTML = data.users.map(user => `
         <div class="gx-topcoin-row">
           <div class="gx-topcoin-rank rank-${Number(user.rank)}">${Number(user.rank)}.</div>
-          <img src="${escapeHtml(user.avatar_url)}" alt="" loading="lazy" decoding="async" fetchpriority="low" onerror="this.src='/static/profil.webp'">
-          <div class="gx-topcoin-name">${escapeHtml(user.username)}</div>
+          <div class="gx-topcoin-avatar">
+            ${user.crown_enabled ? '<span class="gx-topcoin-crown" aria-hidden="true">👑</span>' : ''}
+            <img src="${escapeHtml(user.avatar_url)}" alt="" loading="lazy" decoding="async" fetchpriority="low" onerror="this.src='/static/profil.webp'">
+          </div>
+          <div class="gx-topcoin-name" data-name-color="${["white","red","blue","gradient"].includes(user.name_color) ? user.name_color : "white"}">${escapeHtml(user.display_name || "Ganz X - OFC")}</div>
           <div class="gx-topcoin-balance">🪙 ${Number(user.coins).toLocaleString("id-ID")}</div>
         </div>
       `).join("");
@@ -244,6 +367,12 @@
       if (homeUsername) homeUsername.style.display = "none";
       setProfileAvatar("/static/profil.webp");
       const profileName = document.getElementById("gx-profile-username");
+      const headerName = document.querySelector(".profile-header .profile-name");
+      if (headerName) {
+        headerName.dataset.nameColor = "white";
+        headerName.textContent = "Ganz X - OFC";
+      }
+      renderNameColorControls();
       const profileCoins = document.getElementById("gx-profile-coins");
       if (profileName) profileName.textContent = "Belum login";
       if (profileCoins) profileCoins.textContent = "0";

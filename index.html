@@ -150,14 +150,25 @@ body {
   font-size: 19px;
   font-weight: 900;
   letter-spacing: .2px;
-  background: linear-gradient(
-    90deg,
-    #42a5ff,
-    #4d75ff,
-    #9870ff,
-    #c16bff,
-    #6b8cff
-  );
+  background: none;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+}
+
+.profile-name[data-name-color="red"] {
+  background: none;
+  color: #ff4242;
+  -webkit-text-fill-color: #ff4242;
+}
+
+.profile-name[data-name-color="blue"] {
+  background: none;
+  color: #398cff;
+  -webkit-text-fill-color: #398cff;
+}
+
+.profile-name[data-name-color="gradient"] {
+  background: linear-gradient(90deg, #42a5ff, #4d75ff, #9870ff, #c16bff, #6b8cff);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -438,6 +449,39 @@ body {
   height: 100% !important;
   border-radius: 50% !important;
   object-fit: cover !important;
+}
+
+/* MAHKOTA DI ATAS FOTO PROFIL */
+.profile-header .profile {
+  position: relative !important;
+  overflow: visible !important;
+}
+.gx-profile-crown {
+  position: absolute;
+  top: -14px;
+  left: calc(50% - 11px);
+  transform: translateX(-50%) rotate(-18deg);
+  z-index: 1;
+  font-size: 29px;
+  line-height: 1;
+  filter: drop-shadow(0 0 5px #ffd700);
+  pointer-events: none;
+}
+.profile-header .profile img,
+.gx-account-avatar-wrap img {
+  position: relative;
+  z-index: 2;
+}
+.gx-account-avatar-wrap {
+  position: relative;
+  width: 104px;
+  height: 104px;
+}
+.gx-account-avatar-wrap .gx-profile-crown {
+  top: -17px !important;
+  left: calc(50% - 25px) !important;
+  transform: translateX(-50%) rotate(-26deg) !important;
+  font-size: 46px !important;
 }
 
 
@@ -777,19 +821,55 @@ body {
   font-weight: 900;
   text-align: center;
 }
-.gx-topcoin-row img {
+.gx-topcoin-avatar {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+.gx-topcoin-avatar img {
+  position: relative;
+  z-index: 2;
+  display: block;
   width: 36px;
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid #8066ff;
+  box-sizing: border-box;
+}
+.gx-topcoin-crown {
+  position: absolute;
+  z-index: 1;
+  top: -3px;
+  left: calc(50% - 12px);
+  transform: translateX(-50%) rotate(-34deg);
+  font-size: 14px;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px #ffd700);
+  pointer-events: none;
 }
 .gx-topcoin-name {
   min-width: 0;
-  color: #f4f2ff;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
   font-size: 12px;
   font-weight: 800;
   overflow-wrap: anywhere;
+}
+.gx-topcoin-name[data-name-color="red"] {
+  color: #ff4d5e;
+  -webkit-text-fill-color: #ff4d5e;
+}
+.gx-topcoin-name[data-name-color="blue"] {
+  color: #4295ff;
+  -webkit-text-fill-color: #4295ff;
+}
+.gx-topcoin-name[data-name-color="gradient"] {
+  background: linear-gradient(90deg, #42a5ff, #4d75ff, #9870ff, #c16bff, #6b8cff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 .gx-topcoin-balance {
   color: #ffe58a;
@@ -804,9 +884,13 @@ body {
     gap: 5px;
     padding: 8px 5px;
   }
-  .gx-topcoin-row img {
+  .gx-topcoin-avatar,
+  .gx-topcoin-avatar img {
     width: 32px;
     height: 32px;
+  }
+  .gx-topcoin-crown {
+    font-size: 14px;
   }
   .gx-topcoin-balance {
     font-size: 10px;
@@ -1081,6 +1165,7 @@ body {
 
   <header class="profile-header">
     <div class="profile">
+      <span id="gx-home-crown" class="gx-profile-crown" style="display:none;" aria-hidden="true">👑</span>
       <img src="/static/profil.webp" alt="Foto profil Ganz X - OFC">
     </div>
     <div class="profile-info">
@@ -1242,19 +1327,32 @@ body {
   <section class="gx-extra-page" id="gx-page-account">
     <div class="gx-account-panel">
       <div class="gx-profile-photo-wrap">
-        <img id="gx-profile-avatar" src="/static/profil.webp" alt="Foto profil">
+        <div class="gx-account-avatar-wrap">
+          <span id="gx-account-crown" class="gx-profile-crown" style="display:none;" aria-hidden="true">👑</span>
+          <img id="gx-profile-avatar" src="/static/profil.webp" alt="Foto profil">
+        </div>
         <label for="gx-avatar-file" class="gx-profile-photo-button">UBAH FOTO</label>
         <input id="gx-avatar-file" type="file" accept="image/png,image/jpeg,image/webp" hidden>
       </div>
       <div class="gx-profile-info">
-        <div class="gx-profile-caption">NAMA</div>
+        <div class="gx-profile-caption">Nickname</div>
         <form id="gx-display-name-form" style="display:grid;gap:9px;margin:0 0 16px;">
-          <input id="gx-display-name" type="text" maxlength="30" placeholder="Nama tampilan" required
+          <input id="gx-display-name" type="text" maxlength="30" placeholder="Nickname tampilan" required
             style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #514174;border-radius:10px;background:#0c0917;color:white;font-size:14px;">
-          <button type="submit" style="padding:11px;border:1px solid #8066ff;border-radius:10px;background:linear-gradient(100deg,#38247b,#642b91);color:white;font-weight:800;">SIMPAN NAMA</button>
+          <button type="submit" style="padding:11px;border:1px solid #8066ff;border-radius:10px;background:linear-gradient(100deg,#38247b,#642b91);color:white;font-weight:800;">SIMPAN NICKNAME</button>
         </form>
         <div class="gx-profile-caption">USERNAME</div>
         <div id="gx-profile-username">Belum login</div>
+        <div id="gx-name-color-panel" style="margin-top:16px;padding:12px;border:1px solid #514174;border-radius:12px;background:#100d1d;">
+          <div style="font-weight:900;margin-bottom:6px;">🎨 Color Nickname</div>
+          <div id="gx-name-color-progress" style="font-size:12px;color:#c8b9e8;margin-bottom:10px;">Login untuk melihat progres warna.</div>
+          <div id="gx-name-color-options" style="display:grid;gap:8px;"></div>
+        </div>
+        <div id="gx-crown-panel" style="margin-top:12px;padding:12px;border:1px solid #514174;border-radius:12px;background:#100d1d;">
+          <div style="font-weight:900;margin-bottom:6px;">👑 Mahkota</div>
+          <div id="gx-crown-progress" style="font-size:12px;color:#c8b9e8;margin-bottom:10px;">Login untuk melihat progres mahkota.</div>
+          <div id="gx-crown-options" style="display:grid;gap:8px;"></div>
+        </div>
 
       </div>
       <p id="gx-profile-message" role="status"></p>
@@ -1624,7 +1722,10 @@ body {
 })();
 </script>
 
-<div id="gx-coin-label" style="position:fixed;top:36px;right:68px;z-index:10000;padding:7px 10px;border:1px solid #8b70ff;border-radius:9px;background:rgba(15,13,35,.96);color:#fff;font-size:12px;font-weight:800;">🪙 COINS : 0</div>
+<div id="gx-coin-top-wrap" style="position:fixed;top:30px;right:17px;z-index:10001;display:flex;align-items:center;gap:6px;">
+  <button id="gx-coin-plus" type="button" aria-label="Beli Coins" title="Beli Coins" style="width:29px;height:29px;padding:0;border:0;border-radius:0;background:transparent;color:white;font-size:25px;font-weight:900;line-height:1;cursor:pointer;">+</button>
+  <div id="gx-coin-label" style="position:static;padding:7px 10px;border:1px solid #8b70ff;border-radius:9px;background:rgba(15,13,35,.96);color:#fff;font-size:12px;font-weight:800;">🪙 COINS : 0</div>
+</div>
 <div id="gx-music-box" aria-label="Kontrol musik">
   <button id="gx-music-toggle" type="button" aria-label="Putar atau jeda musik" title="Putar / jeda"><span id="gx-music-icon" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#fff !important;-webkit-text-fill-color:#fff !important;font-size:1.1em;line-height:1;margin:0;padding:0;transform:translateX(2px);"></span></button>
 </div>
@@ -1669,7 +1770,7 @@ body {
 })();
 </script>
 
-<script src="/static/account-ui.js?v=10"></script>
+<script src="/static/account-ui.js?v=14"></script>
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -1878,7 +1979,14 @@ if ("serviceWorker" in navigator) {
   const modal = document.getElementById("gx-buy-coins-modal");
   const list = document.getElementById("gx-buy-coins-list");
   const close = document.getElementById("gx-buy-coins-close");
+  const plus = document.getElementById("gx-coin-plus");
   if (!buyLink || !modal || !list || !close) return;
+
+  if (plus) {
+    plus.addEventListener("click", () => {
+      modal.classList.add("gx-show");
+    });
+  }
 
   list.innerHTML = Array.from({length:10}, (_,i) => {
     const coins = (i+1)*5;
@@ -1923,10 +2031,15 @@ if ("serviceWorker" in navigator) {
 
 <style id="gx-top-buttons-layout">
 /* SALDO COINS di atas MUSIC, pojok kanan atas */
-#gx-coin-label {
+#gx-coin-top-wrap {
   top: 30px !important;
   right: 17px !important;
   z-index: 10001 !important;
+}
+#gx-coin-label {
+  top: auto !important;
+  right: auto !important;
+  z-index: auto !important;
 }
 #gx-music-box {
   top: 75px !important;
