@@ -480,7 +480,7 @@ ${given === 0 && d.coins_refunded
   });
 
 
-  // GANZ X - OFC: Improved BLUK click sound
+  // GANZ X - OFC: Soft Bubble BLUUP Sound
   document.addEventListener("click", event => {
     const el = event.target instanceof Element
       ? event.target.closest('button, input[type="button"], input[type="submit"], [role="button"]')
@@ -495,32 +495,56 @@ ${given === 0 && d.coins_refunded
       const ctx = window.__gxClickAudioContext ||
         (window.__gxClickAudioContext = new AudioCtx());
 
-      const playBluk = () => {
+      const playBlup = () => {
         if (ctx.state !== "running") return;
 
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+
+        master.gain.value = 0.85;
+        master.connect(ctx.destination);
+
+        // Main rounded bubble sound
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        const now = ctx.currentTime;
 
         osc.type = "sine";
-        osc.frequency.setValueAtTime(230, now);
-        osc.frequency.exponentialRampToValueAtTime(65, now + 0.17);
+        osc.frequency.setValueAtTime(330, now);
+        osc.frequency.exponentialRampToValueAtTime(105, now + 0.28);
 
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.22, now + 0.015);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.20);
+        gain.gain.exponentialRampToValueAtTime(0.42, now + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
 
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(master);
 
         osc.start(now);
-        osc.stop(now + 0.21);
+        osc.stop(now + 0.35);
+
+        // Soft bubbly resonance
+        const bubble = ctx.createOscillator();
+        const bubbleGain = ctx.createGain();
+
+        bubble.type = "sine";
+        bubble.frequency.setValueAtTime(560, now);
+        bubble.frequency.exponentialRampToValueAtTime(190, now + 0.20);
+
+        bubbleGain.gain.setValueAtTime(0.0001, now);
+        bubbleGain.gain.exponentialRampToValueAtTime(0.10, now + 0.018);
+        bubbleGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+
+        bubble.connect(bubbleGain);
+        bubbleGain.connect(master);
+
+        bubble.start(now);
+        bubble.stop(now + 0.25);
       };
 
       if (ctx.state === "suspended") {
-        ctx.resume().then(playBluk).catch(() => {});
+        ctx.resume().then(playBlup).catch(() => {});
       } else {
-        playBluk();
+        playBlup();
       }
     } catch (_) {}
   }, true);
