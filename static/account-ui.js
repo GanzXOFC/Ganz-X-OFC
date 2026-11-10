@@ -479,5 +479,43 @@ ${given === 0 && d.coins_refunded
     if (!document.hidden) refreshAccount();
   });
 
+
+  // GANZ X - OFC: Global BLUK click sound
+  document.addEventListener("click", event => {
+    const el = event.target instanceof Element
+      ? event.target.closest('button, input[type="button"], input[type="submit"], [role="button"]')
+      : null;
+
+    if (!el || el.disabled || el.dataset.noSound === "true") return;
+
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+
+      const ctx = window.__gxClickAudioContext ||
+        (window.__gxClickAudioContext = new AudioCtx());
+
+      if (ctx.state === "suspended") ctx.resume();
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      const now = ctx.currentTime;
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(190, now);
+      osc.frequency.exponentialRampToValueAtTime(75, now + 0.12);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.13, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } catch (_) {}
+  }, true);
+
   refreshAccount();
 })();
