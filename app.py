@@ -1220,8 +1220,16 @@ def like_history():
             FROM like_history h
             JOIN accounts a ON a.id = h.account_id
             WHERE h.status = 'success' AND h.likes_given > 0
+              AND h.service IN ('free', 'vip')
+              AND h.id IN (
+                  SELECT id
+                  FROM like_history
+                  WHERE status = 'success' AND likes_given > 0
+                    AND service = h.service
+                  ORDER BY id DESC
+                  LIMIT 25
+              )
             ORDER BY h.id DESC
-            LIMIT 50
         """).fetchall()
     return jsonify([dict(row) for row in rows])
 

@@ -176,8 +176,8 @@ body {
 
 .profile-name[data-name-color="blue"] {
   background: none;
-  color: #398cff;
-  -webkit-text-fill-color: #398cff;
+  color: #4295ff;
+  -webkit-text-fill-color: #4295ff;
 }
 
 .profile-name[data-name-color="gradient"] {
@@ -1146,7 +1146,7 @@ body {
 
 
 #gx-home-like-history{margin:24px auto 35px;padding:16px;max-width:900px;border:1px solid #494276;border-radius:18px;background:#0a081c;color:#fff}
-#gx-home-like-history h2{text-align:center;color:#a9baff;margin:5px 0 18px}
+#gx-home-like-history h2{text-align:center;color:#a9baff;margin:5px 0 30px !important;padding-bottom:10px !important}
 .gx-home-history-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:start}
 .gx-home-history-columns>div{min-width:0}
 .gx-home-history-columns h3{text-align:center;font-size:16px;margin:4px 0 10px}
@@ -1781,7 +1781,7 @@ body {
 </script>
 
 <div id="gx-coin-top-wrap" style="position:fixed;top:30px;right:17px;z-index:10001;display:flex;align-items:center;gap:6px;">
-  <button id="gx-coin-plus" type="button" aria-label="Beli Coins" title="Beli Coins" style="width:29px;height:29px;padding:0;border:0;border-radius:0;background:transparent;color:white;font-size:25px;font-weight:900;line-height:1;cursor:pointer;">+</button>
+  <button id="gx-coin-plus" type="button" aria-label="Beli Coins" title="Beli Coins" style="width:29px;height:29px;padding:0;border:1px solid #514174;border-radius:7px;background:rgba(45,38,65,.85);color:white;font-size:25px;font-weight:900;line-height:1;cursor:pointer;">+</button>
   <div id="gx-coin-label" style="position:static;padding:7px 10px;border:1px solid #8b70ff;border-radius:9px;background:rgba(15,13,35,.96);color:#fff;font-size:12px;font-weight:800;">🪙 COINS : 0</div>
 </div>
 <div id="gx-music-box" aria-label="Kontrol musik">
@@ -2023,12 +2023,11 @@ if ("serviceWorker" in navigator) {
 </style>
 <div id="gx-buy-coins-modal" role="dialog" aria-modal="true" aria-label="Harga Coins">
   <div class="gx-buy-panel">
-    <h2>🪙 HARGA COINS</h2>
     <div id="gx-buy-coins-list" style="display:none"></div>
     <p style="text-align:center;font-size:12px;line-height:1.6;margin:14px 0">
       📢 Sebelum membeli coins pastikan anda sudah login terlebih dahulu, karena proses pengiriman coins akan di kirim melalui username ✅
     </p>
-    <a class="gx-buy-wa" id="gx-buy-coins-wa" href="#gx-page-chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-5 4v-4.5a2.5 2.5 0 0 1-1-2V5.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>CHAT ADMIN</span></a>
+    <a class="gx-buy-wa" id="gx-buy-coins-wa" href="#gx-page-chat"><span aria-hidden="true" style="font-size:20px;line-height:1;">💬</span><span>BELI COINS</span></a>
     
   </div>
 </div>

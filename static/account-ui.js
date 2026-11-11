@@ -180,7 +180,7 @@
     const choices = [
       {id:"white", label:"WHITE", cost:0, color:"#ffffff"},
       {id:"red", label:"RED", cost:20, color:"#ff4242"},
-      {id:"blue", label:"BLUE", cost:50, color:"#398cff"},
+      {id:"blue", label:"BLUE", cost:50, color:"#4295ff"},
       {id:"gradient", label:"BLUE NEON", cost:100, color:"#b879ff"}
     ];
 
@@ -191,7 +191,9 @@
         ${open ? "" : "disabled"}
         style="width:100%;margin:0;padding:10px;border-radius:9px;border:1px solid ${selected ? item.color : "#514174"};
         background:${selected ? "#29203d" : "#171326"};color:${item.color};font-weight:900;opacity:${open ? "1" : ".48"};">
-        ${item.label}${selected ? "" : open ? "" : ` ${item.cost} COINS 🔒`}
+        ${item.id === "gradient"
+          ? `<span style="background:linear-gradient(90deg,#00aaff,#397bff,#7655ff,#bd55ff);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;">${item.label}</span>`
+          : item.label}${selected ? "" : open ? "" : ` ${item.cost} COINS 🔒`}
       </button>`;
     }).join("");
   }
@@ -256,8 +258,6 @@
       account.name_color = result.name_color;
       account.total_spent = result.total_spent;
       renderProfile();
-      const msg = document.getElementById("gx-profile-message");
-      if (msg) msg.textContent = result.message || "Warna nama berhasil diganti.";
     } catch (error) {
       const msg = document.getElementById("gx-profile-message");
       if (msg) msg.textContent = error.message || "Gagal mengganti warna.";
