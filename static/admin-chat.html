@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GANZ X - Admin Chat</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090713;color:#fff;font-family:Arial,sans-serif}
+header{padding:16px;background:#151027;border-bottom:1px solid #514174}
+h2{margin:0;font-size:19px}
+main{max-width:950px;margin:auto;padding:14px}
+.panel{background:#151027;border:1px solid #514174;border-radius:13px;padding:13px;margin-bottom:12px}
+input,button{font:inherit}
+input{width:100%;padding:12px;border:1px solid #514174;border-radius:9px;background:#090713;color:white}
+button{padding:11px 14px;border:0;border-radius:9px;background:linear-gradient(90deg,#387dff,#b34dff);color:white;font-weight:800}
+button:disabled{opacity:.5}
+#login{display:grid;gap:10px;max-width:430px;margin:50px auto}
+#inbox{display:none}
+#conversation-list{display:grid;gap:8px;max-height:250px;overflow:auto}
+.conversation{width:100%;text-align:left;background:#211a32;border:1px solid #514174}
+.conversation.active{border-color:#8b70ff;background:#30204c}
+#messages{display:none;height: min(48vh,450px);min-height:230px;overflow:auto;flex-direction:column;gap:9px;padding:12px;background:#090713 url("/static/chat-background.jpg") center center / cover no-repeat;border:1px solid #514174;border-radius:10px}
+.bubble{max-width:85%;padding:10px 12px;border-radius:11px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.5}
+.customer{align-self:flex-start;background:#211a32}
+.admin{align-self:flex-end;background:linear-gradient(110deg,#284f9c,#57318d)}
+#send-form{display:flex;gap:8px;margin-top:10px}
+#send-form input{flex:1;min-width:0}
+.muted{color:#bca9e8;font-size:12px}
+
+#admin-home,#coins-panel{display:none}
+.admin-menu{display:grid;gap:12px;margin-top:14px}
+.admin-menu button{width:100%;min-height:76px;text-align:left;padding:16px;background:#211a32;border:1px solid #514174;font-size:16px}
+.admin-menu button span{display:block;font-size:12px;font-weight:400;color:#c9b9e8;margin-top:6px}
+.subheading{font-size:13px;color:#cbb9ee;margin:4px 0 9px}
+.coin-result{margin-top:10px;padding:11px;border:1px solid #514174;background:#090713;border-radius:9px;font-size:13px;overflow-wrap:anywhere}
+.coin-user{width:100%;text-align:left;margin-top:7px;background:#211a32;border:1px solid #514174}
+.coin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.coin-actions button{flex:1}
+.back-button{background:#302348;border:1px solid #66508e}
+.code-item{padding:10px;margin-top:7px;border-radius:8px;background:#211a32;display:flex;justify-content:space-between;align-items:center;gap:8px;overflow-wrap:anywhere}
+.code-item button{flex:none;padding:8px 10px}
+
+</style>
+</head>
+<body>
+<header><h2>💬 Caca</h2></header>
+<main>
+<section id="login" class="panel">
+  <h3 style="margin:0">LOGIN</h3>
+  <div style="position:relative;">
+    <input id="admin-key" type="password" autocomplete="current-password" placeholder="Kunci admin" style="padding-right:48px;">
+    <button id="toggle-admin-key" type="button" aria-label="Lihat kunci admin" style="position:absolute;right:5px;top:50%;transform:translateY(-50%);padding:7px 9px;background:transparent;color:white;font-size:18px;">👁</button>
+  </div>
+  <button id="login-button">MASUK</button>
+  <div id="login-error" class="muted"></div>
+</section>
+
+
+<section id="admin-home">
+  <div class="panel">
+    <strong>MENU</strong>
+    <p class="muted"></p>
+    <div class="admin-menu">
+      <button type="button" id="open-chat-panel">
+        💬 PELANGGAN
+        <span></span>
+      </button>
+      <button type="button" id="open-coins-panel">
+        🪙 COINS
+        <span></span>
+      </button>
+    </div>
+    <div style="margin-top:14px">
+      <button type="button" id="home-logout-button" class="back-button">KELUAR</button>
+    </div>
+  </div>
+</section>
+
+<section id="coins-panel">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <strong>🪙 COINS</strong>
+      <button type="button" id="coins-back-home" class="back-button">KEMBALI</button>
+    </div>
+
+    <div class="coin-result" style="margin-top:14px">
+      <strong>🔎 CARI USERNAME</strong>
+      <p class="muted">Masukkan minimal 2 karakter username.</p>
+      <input id="coin-search-input" placeholder="Cari username pelanggan..." autocomplete="off">
+      <button type="button" id="coin-search-button" style="width:100%;margin-top:9px">CARI AKUN</button>
+      <div id="coin-search-results"></div>
+    </div>
+
+    <div class="coin-result">
+      <strong>👤 AKUN TERPILIH</strong>
+      <div id="coin-selected-account" class="muted" style="margin-top:8px">Belum ada akun dipilih.</div>
+      <form id="coin-add-form" style="display:grid;gap:9px;margin-top:12px">
+        <label class="subheading" for="coin-add-amount">JUMLAH COINS</label>
+        <input id="coin-add-amount" type="number" min="1" max="1000000" placeholder="Masukkan jumlah coins" required>
+        <button type="submit" id="coin-add-submit">TAMBAH COINS</button>
+      </form>
+      <div id="coin-add-result" class="muted" style="margin-top:9px"></div>
+    </div>
+
+    <div class="coin-result">
+      <strong>🎟️ BUAT KODE REDEEM</strong>
+      <form id="redeem-create-form" style="display:grid;gap:9px;margin-top:12px">
+        <label class="subheading" for="redeem-amount">COINS PER KODE</label>
+        <input id="redeem-amount" type="number" min="1" max="1000000" placeholder="Jumlah coins per kode" required>
+        <label class="subheading" for="redeem-quantity">JUMLAH KODE</label>
+        <input id="redeem-quantity" type="number" min="1" max="100" placeholder="Jumlah kode (maksimal 100)" required>
+        <label class="subheading" for="redeem-max-uses">BATAS PEMAKAI PER KODE</label>
+        <input id="redeem-max-uses" type="number" min="1" max="100000" value="1" required>
+        <button type="submit" id="redeem-create-submit">BUAT KODE REDEEM</button>
+      </form>
+      <div id="redeem-result" style="margin-top:10px"></div>
+    </div>
+  </div>
+</section>
+
+<section id="inbox">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <strong></strong>
+      <button id="chat-back-home" type="button" class="back-button">KEMBALI</button>
+    </div>
+    <div id="conversation-list" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel" id="chat-area" style="display:none;">
+    <strong id="chat-title">Pilih percakapan</strong>
+    <p id="chat-status" class="muted">Pilih pelanggan untuk melihat pesan.</p>
+    <div id="messages"></div>
+    <div id="admin-photo-preview" style="display:none;margin-top:10px;padding:9px;background:#171126;border:1px solid #514174;border-radius:10px;align-items:center;gap:10px;">
+      <img id="admin-photo-thumb" alt="Pratinjau foto" style="width:64px;height:64px;object-fit:cover;border-radius:8px;">
+      <span style="flex:1;font-size:12px;color:#ddd;">Foto siap dikirim</span>
+      <button type="button" id="admin-photo-cancel">BATAL</button>
+    </div>
+    <form id="send-form" style="display:flex;gap:7px;margin-top:10px;align-items:center;">
+      <input id="admin-photo" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+      <button type="button" id="admin-photo-button" aria-label="Pilih foto" style="width:44px;height:44px;flex:none;font-size:30px;font-weight:bold;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;">+</button>
+      <input id="reply" maxlength="1000" placeholder="Tulis balasan...">
+      <button type="submit">SEND</button>
+    </form>
+  </div>
+  <div id="error" class="muted"></div>
+</section>
+</main>
+<script>
+(() => {
+  const keyName = "gx_admin_chat_key";
+  const login = document.getElementById("login");
+  const inbox = document.getElementById("inbox");
+  const keyInput = document.getElementById("admin-key");
+  const toggleKeyButton = document.getElementById("toggle-admin-key");
+  toggleKeyButton.addEventListener("click", () => {
+    const visible = keyInput.type === "text";
+    keyInput.type = visible ? "password" : "text";
+    toggleKeyButton.textContent = visible ? "👁" : "🙈";
+    toggleKeyButton.setAttribute("aria-label", visible ? "Lihat kunci admin" : "Sembunyikan kunci admin");
+  });
+  const loginError = document.getElementById("login-error");
+  const list = document.getElementById("conversation-list");
+  const messages = document.getElementById("messages");
+  const title = document.getElementById("chat-title");
+  const status = document.getElementById("chat-status");
+  const error = document.getElementById("error");
+  const reply = document.getElementById("reply");
+  const photoInput = document.getElementById("admin-photo");
+  const photoButton = document.getElementById("admin-photo-button");
+  const photoPreview = document.getElementById("admin-photo-preview");
+  const photoThumb = document.getElementById("admin-photo-thumb");
+  const photoCancel = document.getElementById("admin-photo-cancel");
+  let selectedPhoto = null;
+  let previewUrl = "";
+  let adminKey = "";
+  let selectedId = null;
+  let selectedCustomerName = "";
+  let conversations = [];
+  let lastId = 0;
+  const messageTickNodes = new Map();
+  let timer = null;
+  let presenceTimer = null;
+
+  async function sendPresence() {
+    if (!adminKey) return;
+
+    try {
+      await api("/admin/chat/presence", {method: "POST"});
+    } catch (e) {
+      // Coba lagi pada heartbeat berikutnya.
+    }
+  }
+  let busy = false;
+
+  function showPhotoViewer(blob, filename) {
+    const url = URL.createObjectURL(blob);
+
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:14px;";
+
+    const bar = document.createElement("div");
+    bar.style.cssText = "width:100%;max-width:600px;display:flex;justify-content:flex-end;gap:10px;margin-bottom:12px;";
+
+    const save = document.createElement("a");
+    save.textContent = "SIMPAN";
+    save.href = url;
+    save.download = filename + ".jpg";
+    save.style.cssText = "background:#1769ff;color:white;padding:11px 16px;border-radius:9px;text-decoration:none;font-weight:bold;font-size:13px;";
+
+
+    const large = document.createElement("img");
+    large.src = url;
+    large.alt = "Foto chat";
+    large.style.cssText = "max-width:100%;max-height:82vh;object-fit:contain;border-radius:10px;";
+
+    function removeViewer() {
+      URL.revokeObjectURL(url);
+      overlay.remove();
+    }
+
+    overlay.addEventListener("click", e => {
+      if (e.target === overlay) removeViewer();
+    });
+
+    bar.append(save);
+    overlay.append(bar, large);
+    document.body.appendChild(overlay);
+  }
+
+
+  async function api(url, options = {}) {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        "X-Admin-Key": adminKey,
+        ...(options.headers || {})
+      }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.ok === false) {
+      throw new Error(data.message || "Permintaan gagal.");
+    }
+    return data;
+  }
+
+  function addMessage(item) {
+    if (!item || !item.id || item.id <= lastId) return;
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble " + (item.sender === "admin" ? "admin" : "customer");
+
+    const label = document.createElement("strong");
+    label.textContent = item.sender === "admin" ? "ADMIN" : (selectedCustomerName || "Pelanggan");
+    label.style.cssText = "display:block;font-size:10px;margin-bottom:4px;opacity:.75";
+
+    const text = document.createElement("div");
+
+    if (item.has_photo) {
+      const image = document.createElement("img");
+      image.alt = "Foto dari chat";
+      image.style.cssText = "display:block;max-width:100%;max-height:260px;object-fit:contain;border-radius:9px;margin-top:4px;";
+      text.appendChild(image);
+
+      fetch("/admin/chat/photo/" + item.id, {
+        headers: {"X-Admin-Key": adminKey}
+      }).then(response => {
+        if (!response.ok) throw new Error("Foto gagal dimuat.");
+        return response.blob();
+      }).then(blob => {
+        image.src = URL.createObjectURL(blob);
+        image.style.cursor = "zoom-in";
+        image.addEventListener("click", () => showPhotoViewer(blob, "foto-chat-" + item.id));
+      }).catch(() => {
+        text.textContent = "Foto tidak dapat dimuat.";
+      });
+    } else {
+      text.textContent = item.message;
+    }
+
+    const meta = document.createElement("div");
+    meta.style.cssText = "display:block;visibility:visible;color:#ffffff;opacity:1;font-size:11px;text-align:right;margin-top:7px;min-height:13px;";
+    meta.appendChild(document.createTextNode(item.created_time || "--:--"));
+
+    if (item.sender === "admin") {
+      const tick = document.createElement("span");
+      tick.textContent = "✓";
+      tick.style.cssText = "margin-left:5px;font-size:12px;font-weight:700;color:#b8b8b8;";
+      meta.appendChild(tick);
+      messageTickNodes.set(String(item.id), {node: tick, readAt: item.read_at});
+    }
+
+    bubble.append(label, text, meta);
+    messages.appendChild(bubble);
+
+    lastId = item.id;
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  async function loadMessages() {
+    if (!selectedId) return;
+
+    const chatArea = document.getElementById("chat-area");
+    const canRead = (
+      document.visibilityState === "visible" &&
+      chatArea &&
+      chatArea.style.display !== "none"
+    );
+
+    const data = await api("/admin/chat/" + selectedId + "/messages");
+    const items = data.messages || [];
+
+    for (const item of items) addMessage(item);
+
+    const latest = new Map(items.map(item => [String(item.id), item]));
+
+    for (const [id, entry] of messageTickNodes) {
+      const item = latest.get(id);
+      if (item) entry.readAt = item.read_at;
+
+      if (entry.readAt) {
+        entry.node.textContent = "✓✓";
+        entry.node.style.color = "#39a9ff";
+      } else if (data.customer_online) {
+        entry.node.textContent = "✓✓";
+        entry.node.style.color = "#b8b8b8";
+      } else {
+        entry.node.textContent = "✓";
+        entry.node.style.color = "#b8b8b8";
+      }
+    }
+
+    if (canRead) {
+      await api("/admin/chat/" + selectedId + "/read", {
+        method: "POST"
+      });
+    }
+  }
+
+  async function loadConversations() {
+    const data = await api("/admin/chat/conversations");
+    conversations = data.conversations || [];
+    list.replaceChildren();
+
+    for (const item of conversations) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "conversation" + (item.id === selectedId ? " active" : "");
+      button.style.cssText += ";display:flex;align-items:center;gap:11px;text-align:left";
+
+      const avatar = document.createElement("img");
+      avatar.src = item.avatar_url || "/static/profil.webp";
+      avatar.alt = "";
+      avatar.style.cssText = "width:42px;height:42px;min-width:42px;border-radius:50%;object-fit:cover;border:2px solid #6550a0";
+
+      avatar.onerror = function () {
+        if (!this.src.endsWith("/static/profil.webp")) {
+          this.src = "/static/profil.webp";
+        }
+      };
+
+      const info = document.createElement("div");
+      info.style.cssText = "flex:1;min-width:0";
+
+      const name = document.createElement("div");
+      name.textContent = item.customer_name;
+      name.style.fontWeight = "800";
+
+      const preview = document.createElement("div");
+      preview.textContent = item.last_message || "Belum ada pesan";
+      preview.style.cssText = "font-size:12px;opacity:.75;margin-top:5px;overflow-wrap:anywhere";
+
+      info.append(name, preview);
+      button.append(avatar, info);
+      button.addEventListener("click", () => selectConversation(item));
+      list.appendChild(button);
+    }
+
+    if (!conversations.length) {
+      const empty = document.createElement("p");
+      empty.className = "muted";
+      empty.textContent = "Belum ada percakapan.";
+      list.appendChild(empty);
+    }
+  }
+
+  async function selectConversation(item) {
+    selectedId = item.id;
+    selectedCustomerName = item.customer_name;
+    document.getElementById("chat-area").style.display = "block";
+    messages.style.display = "flex";
+    lastId = 0;
+    messageTickNodes.clear();
+    messages.replaceChildren();
+    title.textContent = "";
+    status.textContent = "";
+    await loadConversations();
+    await loadMessages();
+  }
+
+  async function refresh() {
+    if (busy) return;
+    busy = true;
+    try {
+      await loadConversations();
+      await loadMessages();
+      error.textContent = "";
+    } catch (e) {
+      error.textContent = e.message;
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function enter(key) {
+    adminKey = key;
+    try {
+      await api("/admin/chat/conversations");
+      localStorage.setItem(keyName, key);
+      login.style.display = "none";
+      inbox.style.display = "none";
+      document.getElementById("admin-home").style.display = "block";
+      document.getElementById("coins-panel").style.display = "none";
+      await sendPresence();
+
+      if (presenceTimer) clearInterval(presenceTimer);
+      presenceTimer = setInterval(sendPresence, 15000);
+
+      await refresh();
+
+      if (timer) clearInterval(timer);
+      timer = setInterval(refresh, 4000);
+    } catch (e) {
+      adminKey = "";
+      loginError.textContent = e.message;
+    }
+  }
+
+  document.getElementById("login-button").addEventListener("click", () => {
+    const key = keyInput.value;
+    if (key) enter(key);
+  });
+
+  keyInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") document.getElementById("login-button").click();
+  });
+
+  function logoutAdmin() {
+    localStorage.removeItem(keyName);
+    adminKey = "";
+    selectedId = null;
+    if (timer) clearInterval(timer);
+    if (presenceTimer) clearInterval(presenceTimer);
+    timer = null;
+    presenceTimer = null;
+
+    inbox.style.display = "none";
+    document.getElementById("admin-home").style.display = "none";
+    document.getElementById("coins-panel").style.display = "none";
+    login.style.display = "grid";
+    keyInput.value = "";
+  }
+
+  document.getElementById("home-logout-button").addEventListener("click", logoutAdmin);
+
+  document.getElementById("open-chat-panel").addEventListener("click", async () => {
+    document.getElementById("admin-home").style.display = "none";
+    document.getElementById("coins-panel").style.display = "none";
+    inbox.style.display = "block";
+    await refresh();
+  });
+
+  document.getElementById("open-coins-panel").addEventListener("click", () => {
+    document.getElementById("admin-home").style.display = "none";
+    inbox.style.display = "none";
+    document.getElementById("coins-panel").style.display = "block";
+  });
+
+  document.getElementById("chat-back-home").addEventListener("click", () => {
+    inbox.style.display = "none";
+    document.getElementById("admin-home").style.display = "block";
+  });
+
+  document.getElementById("coins-back-home").addEventListener("click", () => {
+    document.getElementById("coins-panel").style.display = "none";
+    document.getElementById("admin-home").style.display = "block";
+  });
+
+  function clearPhoto() {
+    selectedPhoto = null;
+    photoInput.value = "";
+    photoPreview.style.display = "none";
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = "";
+    photoThumb.removeAttribute("src");
+  }
+
+  photoButton.addEventListener("click", () => photoInput.click());
+
+  photoInput.addEventListener("change", () => {
+    const file = photoInput.files && photoInput.files[0];
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      error.textContent = "Pilih foto JPEG, PNG, atau WEBP.";
+      clearPhoto();
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      error.textContent = "Ukuran foto maksimal 3 MB.";
+      clearPhoto();
+      return;
+    }
+
+    selectedPhoto = file;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(file);
+    photoThumb.src = previewUrl;
+    photoPreview.style.display = "flex";
+    error.textContent = "";
+  });
+
+  photoCancel.addEventListener("click", clearPhoto);
+
+  document.getElementById("send-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!selectedId) {
+      error.textContent = "Pilih percakapan terlebih dahulu.";
+      return;
+    }
+
+    const message = reply.value.trim();
+    if (!selectedPhoto && !message) return;
+
+    const button = e.currentTarget.querySelector('button[type="submit"]');
+    button.disabled = true;
+    photoButton.disabled = true;
+
+    try {
+      if (selectedPhoto) {
+        const formData = new FormData();
+        formData.append("photo", selectedPhoto);
+        await api("/admin/chat/" + selectedId + "/photo", {
+          method: "POST",
+          body: formData
+        });
+        clearPhoto();
+      } else {
+        await api("/admin/chat/" + selectedId + "/messages", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({message})
+        });
+        reply.value = "";
+      }
+
+      await loadMessages();
+      await loadConversations();
+      error.textContent = "";
+    } catch (e) {
+      error.textContent = e.message;
+    } finally {
+      button.disabled = false;
+      photoButton.disabled = false;
+    }
+  });
+
+
+  // Pencarian akun untuk Panel Coins.
+  let selectedCoinUsername = "";
+  const searchInput = document.getElementById("coin-search-input");
+  const searchResults = document.getElementById("coin-search-results");
+  const selectedAccount = document.getElementById("coin-selected-account");
+  const addCoinButton = document.getElementById("coin-add-submit");
+  const addCoinResult = document.getElementById("coin-add-result");
+
+  searchResults.addEventListener("click", event => {
+    const choice = event.target.closest("button.coin-user");
+    if (!choice || !searchResults.contains(choice)) return;
+
+    selectedCoinUsername = choice.dataset.username || "";
+    selectedAccount.textContent = selectedCoinUsername + " | Saldo: " +
+      Number(choice.dataset.coins).toLocaleString("id-ID") + " coins";
+    addCoinResult.textContent = "";
+  });
+
+
+  document.getElementById("coin-search-button").addEventListener("click", async () => {
+    const query = searchInput.value.trim();
+    searchResults.replaceChildren();
+    selectedCoinUsername = "";
+    selectedAccount.textContent = "Belum ada akun dipilih.";
+
+    if (query.length < 2) {
+      searchResults.textContent = "Masukkan minimal 2 karakter.";
+      return;
+    }
+
+    const button = document.getElementById("coin-search-button");
+    button.disabled = true;
+    button.textContent = "MENCARI...";
+
+    try {
+      const data = await api("/admin/search-accounts?q=" + encodeURIComponent(query));
+      if (!data.users || !data.users.length) {
+        searchResults.textContent = "Username tidak ditemukan.";
+      } else {
+        for (const user of data.users) {
+          const choice = document.createElement("button");
+          choice.type = "button";
+          choice.className = "coin-user";
+          choice.textContent = user.username + " — " + Number(user.coins).toLocaleString("id-ID") + " coins";
+          choice.dataset.username = user.username;
+          choice.dataset.coins = String(user.coins);
+
+          choice.onclick = function () {
+            selectedCoinUsername = user.username;
+            selectedAccount.textContent =
+              user.username + " | Saldo: " +
+              Number(user.coins).toLocaleString("id-ID") + " coins";
+            addCoinResult.textContent = "Akun berhasil dipilih.";
+          };
+
+          searchResults.appendChild(choice);
+        }
+
+        const exactUser = data.users.find(
+          user => user.username.toLowerCase() === query.toLowerCase()
+        );
+        const chosenUser = exactUser ||
+          (data.users.length === 1 ? data.users[0] : null);
+
+        if (chosenUser) {
+          selectedCoinUsername = chosenUser.username;
+          selectedAccount.textContent =
+            chosenUser.username + " | Saldo: " +
+            Number(chosenUser.coins).toLocaleString("id-ID") + " coins";
+          addCoinResult.textContent = "Akun berhasil dipilih.";
+        }
+      }
+    } catch (e) {
+      searchResults.textContent = e.message;
+    } finally {
+      button.disabled = false;
+      button.textContent = "CARI AKUN";
+    }
+  });
+
+  searchInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      document.getElementById("coin-search-button").click();
+    }
+  });
+
+  document.getElementById("coin-add-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    if (!selectedCoinUsername) {
+      addCoinResult.textContent = "Pilih akun terlebih dahulu.";
+      return;
+    }
+
+    const amount = Number(document.getElementById("coin-add-amount").value);
+    if (!Number.isInteger(amount) || amount < 1 || amount > 1000000) {
+      addCoinResult.textContent = "Jumlah coins harus 1 sampai 1.000.000.";
+      return;
+    }
+
+    addCoinResult.textContent = "Sedang menambahkan coins...";
+
+    try {
+      const data = await api("/admin/add-coins", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({username: selectedCoinUsername, amount})
+      });
+      selectedAccount.textContent = data.username + " | Saldo terbaru: " +
+        Number(data.coins).toLocaleString("id-ID") + " coins";
+      addCoinResult.textContent = "Berhasil menambahkan " +
+        amount.toLocaleString("id-ID") + " coins.";
+      document.getElementById("coin-add-amount").value = "";
+      document.getElementById("coin-search-button").click();
+    } catch (e) {
+      addCoinResult.textContent = e.message;
+    } finally {
+    }
+  });
+
+  // Pembuatan kode redeem.
+  document.getElementById("redeem-create-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const amount = Number(document.getElementById("redeem-amount").value);
+    const quantity = Number(document.getElementById("redeem-quantity").value);
+    const max_uses = Number(document.getElementById("redeem-max-uses").value);
+    const result = document.getElementById("redeem-result");
+    const button = document.getElementById("redeem-create-submit");
+
+    if (!Number.isInteger(amount) || amount < 1 || amount > 1000000 ||
+        !Number.isInteger(quantity) || quantity < 1 || quantity > 100 ||
+        !Number.isInteger(max_uses) || max_uses < 1 || max_uses > 100000) {
+      result.textContent = "Periksa jumlah coins, jumlah kode, dan batas pemakai.";
+      return;
+    }
+
+    button.disabled = true;
+    result.textContent = "Sedang membuat kode...";
+
+    try {
+      const data = await api("/admin/create-redeem-codes", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({amount, quantity, max_uses})
+      });
+
+      result.replaceChildren();
+      const summary = document.createElement("p");
+      summary.className = "muted";
+      summary.textContent = "Berhasil membuat " + data.quantity +
+        " kode. Setiap kode berisi " + data.coins + " coins.";
+      result.appendChild(summary);
+
+      const copyAll = document.createElement("button");
+      copyAll.type = "button";
+      copyAll.textContent = "SALIN SEMUA KODE";
+      copyAll.style.width = "100%";
+      copyAll.addEventListener("click", async () => {
+        const allCodes = (data.codes || []).join("\\n");
+        try {
+          await navigator.clipboard.writeText(allCodes);
+          copyAll.textContent = "BERHASIL DISALIN";
+        } catch (_) {
+          const area = document.createElement("textarea");
+          area.value = allCodes;
+          document.body.appendChild(area);
+          area.select();
+          document.execCommand("copy");
+          area.remove();
+          copyAll.textContent = "KODE DISALIN";
+        }
+      });
+      result.appendChild(copyAll);
+
+      for (const code of data.codes || []) {
+        const item = document.createElement("div");
+        item.className = "code-item";
+        const value = document.createElement("strong");
+        value.textContent = code;
+        const copy = document.createElement("button");
+        copy.type = "button";
+        copy.textContent = "SALIN";
+        copy.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(code);
+            copy.textContent = "OK";
+          } catch (_) {
+            const area = document.createElement("textarea");
+            area.value = code;
+            document.body.appendChild(area);
+            area.select();
+            document.execCommand("copy");
+            area.remove();
+            copy.textContent = "OK";
+          }
+        });
+        item.append(value, copy);
+        result.appendChild(item);
+      }
+
+      document.getElementById("redeem-quantity").value = "";
+    } catch (e) {
+      result.textContent = e.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  const saved = localStorage.getItem(keyName);
+  if (saved) enter(saved);
+})();
+</script>
+</body>
+</html>

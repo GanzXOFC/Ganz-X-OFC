@@ -5,7 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GANZ X - OFC</title>
 
+
 <style>
+#gx-chat-photo-button {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background: linear-gradient(90deg,#387dff,#b34dff) !important;
+  background-color: transparent !important;
+  background-image: linear-gradient(90deg,#387dff,#b34dff) !important;
+  border: 1px solid #514174 !important;
+  color: white !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -1185,10 +1198,7 @@ body {
          href="https://wa.me/6285819385168"
          target="_blank"
          rel="noopener noreferrer">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 2C6.48 2 2 6.48 2 12c0 1.78.47 3.45 1.29 4.9L2 22l5.25-1.25A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2Z" fill="#25D366" stroke="#fff" stroke-width="1" stroke-linejoin="round"/>
-          <path d="M8.2 7.5c.3-.5.6-.5.9-.5h.5c.2 0 .4.1.5.4l.8 1.8c.1.2.1.4-.1.6l-.6.7c-.2.2-.2.4 0 .7.6 1 1.4 1.8 2.5 2.3.2.1.4.1.6-.1l.8-.9c.2-.2.4-.2.6-.1l1.7.8c.3.1.4.3.4.5 0 .4-.2 1-.6 1.3-.4.4-1.1.7-1.8.6-1-.1-2.3-.6-3.7-1.8-1.2-1-2.1-2.3-2.4-3.2-.4-1.1-.1-2.3.4-3.1Z" fill="#fff" stroke="none"/>
-        </svg>
+        <span aria-hidden="true" style="font-size:19px;line-height:1;">💬</span>
         <span>COINS 🪙</span>
         <span class="gx-admin-arrow"></span>
       </a>
@@ -1380,6 +1390,55 @@ body {
     </div>
   </section>
 
+  <section class="gx-extra-page" id="gx-page-chat">
+    <div class="gx-account-panel" style="max-width:600px;margin:auto;">
+      <h2 style="text-align:center;"><span style="color:#25D366;">💬</span> Caca</h2>
+
+      <div id="gx-chat-guest-box" style="display:none;margin:14px 0;">
+        <label for="gx-chat-guest-name" style="display:block;margin-bottom:7px;">Nama kamu</label>
+        <input id="gx-chat-guest-name" maxlength="30" placeholder="Masukkan nama"
+          style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #514174;border-radius:10px;background:#0c0917;color:white;">
+        <button id="gx-chat-start" type="button"
+          style="width:100%;margin-top:9px;padding:12px;border:0;border-radius:10px;background:linear-gradient(90deg,#387dff,#b34dff);color:white;font-weight:800;">
+          MULAI CHAT
+        </button>
+      </div>
+
+      <div id="gx-chat-loading" style="display:none;text-align:center;padding:20px;color:#c8b9e8;font-weight:800;">
+        Memuat...
+      </div>
+
+      <div id="gx-chat-area" style="display:none;">
+        <div id="gx-chat-messages" aria-live="polite"
+          style="height: min(52vh,430px);min-height:260px;overflow-y:auto;padding:12px;border:1px solid #514174;border-radius:12px;background:#090713 url('/static/chat-background.jpg') center center / cover no-repeat;display:flex;flex-direction:column;gap:9px;">
+        </div>
+        <div id="gx-chat-photo-preview" style="display:none;margin-top:10px;padding:9px;background:#171126;border:1px solid #514174;border-radius:10px;align-items:center;gap:10px;">
+          <img id="gx-chat-photo-thumb" alt="Pratinjau foto" style="width:64px;height:64px;object-fit:cover;border-radius:8px;">
+          <span style="flex:1;font-size:12px;color:#ddd;">Foto siap dikirim</span>
+          <button type="button" id="gx-chat-photo-cancel" style="border:0;background:#422039;color:white;padding:8px 10px;border-radius:8px;">BATAL</button>
+        </div>
+        <form id="gx-chat-form" style="display:flex;gap:7px;margin-top:10px;align-items:center;">
+          <input id="gx-chat-photo" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <button type="button" id="gx-chat-photo-button" aria-label="Pilih foto"
+            style="width:44px;height:44px;flex:none;border:1px solid #514174;border-radius:10px;background:#211a32;color:white;font-size:30px;font-weight:bold;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;">+</button>
+          <input id="gx-chat-input" maxlength="1000" autocomplete="off"
+            placeholder="Tulis pesan..."
+            style="flex:1;min-width:0;padding:12px;border:1px solid #514174;border-radius:10px;background:#0c0917;color:white;">
+          <button type="submit"
+            style="padding:0 16px;height:44px;border:0;border-radius:10px;background:linear-gradient(90deg,#387dff,#b34dff);color:white;font-weight:800;">
+            SEND
+          </button>
+        </form>
+      </div>
+
+      <p id="gx-chat-error" role="status" style="color:#ff9bba;font-size:12px;"></p>
+      <button type="button" data-back-home
+        style="width:100%;margin-top:14px;padding:11px;border:1px solid #514174;border-radius:10px;background:#171126;color:white;">
+        KEMBALI
+      </button>
+    </div>
+  </section>
+
 </main>
 
 <nav id="gx-bottom-nav" aria-label="Navigasi utama">
@@ -1482,6 +1541,7 @@ body {
   const vipPage = document.getElementById("gx-page-vip");
   const accountPage = document.getElementById("gx-page-account");
   const topCoinsPage = document.getElementById("gx-page-topcoins");
+  const chatPage = document.getElementById("gx-page-chat");
   const homeHistory = document.getElementById("gx-home-history-list");
   let historyPage = null;
   async function refreshCoins() {
@@ -1602,6 +1662,9 @@ body {
     vipPage.classList.toggle("gx-page-active", page === "vip");
     accountPage.classList.toggle("gx-page-active", page === "account");
     topCoinsPage.classList.toggle("gx-page-active", page === "topcoins");
+    chatPage.classList.toggle("gx-page-active", page === "chat");
+
+    if (page === "chat" && window.gxChatOpen) window.gxChatOpen();
 
     if (page === "home") {
       saveVipToken("");
@@ -1611,6 +1674,8 @@ body {
 
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
+
+  window.gxShowPage = showPage;
 
   document.getElementById("gx-bottom-nav").addEventListener("click", function(event) {
     const button = event.target.closest("[data-gx-page]");
@@ -1764,6 +1829,7 @@ body {
 </script>
 
 <script src="/static/account-ui.js?v=14"></script>
+<script src="/static/chat.js?v=3"></script>
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -1958,12 +2024,12 @@ if ("serviceWorker" in navigator) {
 <div id="gx-buy-coins-modal" role="dialog" aria-modal="true" aria-label="Harga Coins">
   <div class="gx-buy-panel">
     <h2>🪙 HARGA COINS</h2>
-    <div id="gx-buy-coins-list"></div>
+    <div id="gx-buy-coins-list" style="display:none"></div>
     <p style="text-align:center;font-size:12px;line-height:1.6;margin:14px 0">
       📢 Sebelum membeli coins pastikan anda sudah login terlebih dahulu, karena proses pengiriman coins akan di kirim melalui username ✅
     </p>
-    <a class="gx-buy-wa" id="gx-buy-coins-wa" href="https://wa.me/6285213698915?text=Halo%20Ka%20Caca%20%F0%9F%91%8B%0AMau%20beli%20coins%20web" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C6.9 3 3 6.6 3 11c0 2.1.9 4 2.5 5.4L5 21l4.6-2.2c.8.2 1.6.3 2.4.3 5.1 0 9-3.6 9-8s-3.9-8.1-9-8.1Z" fill="#fff"/></svg><span>HUB ADMIN</span></a>
-    <button type="button" class="gx-buy-close" id="gx-buy-coins-close">TUTUP</button>
+    <a class="gx-buy-wa" id="gx-buy-coins-wa" href="#gx-page-chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-5 4v-4.5a2.5 2.5 0 0 1-1-2V5.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>CHAT ADMIN</span></a>
+    
   </div>
 </div>
 <script>
@@ -1973,7 +2039,7 @@ if ("serviceWorker" in navigator) {
   const list = document.getElementById("gx-buy-coins-list");
   const close = document.getElementById("gx-buy-coins-close");
   const plus = document.getElementById("gx-coin-plus");
-  if (!buyLink || !modal || !list || !close) return;
+  if (!buyLink || !modal || !list) return;
 
   if (plus) {
     plus.addEventListener("click", () => {
@@ -1989,12 +2055,14 @@ if ("serviceWorker" in navigator) {
 
   buyLink.removeAttribute("target");
   buyLink.removeAttribute("rel");
-  buyLink.href = "#beli-coins";
+  buyLink.href = "#gx-page-chat";
   buyLink.addEventListener("click", e => {
     e.preventDefault();
-    modal.classList.add("gx-show");
+    modal.classList.remove("gx-show");
+    if (typeof window.gxShowPage === "function") {
+      window.gxShowPage("chat");
+    }
   });
-  close.addEventListener("click", () => modal.classList.remove("gx-show"));
   modal.addEventListener("click", e => {
     if (e.target === modal) modal.classList.remove("gx-show");
   });
@@ -2004,6 +2072,37 @@ if ("serviceWorker" in navigator) {
 })();
 </script>
 
+
+<script>
+(() => {
+  const button = document.getElementById("gx-buy-coins-wa");
+  const modal = document.getElementById("gx-buy-coins-modal");
+  if (!button || !modal) return;
+
+  button.removeAttribute("target");
+  button.removeAttribute("rel");
+
+  button.addEventListener("click", event => {
+    event.preventDefault();
+    modal.classList.remove("gx-show");
+    if (typeof window.gxShowPage === "function") {
+      window.gxShowPage("chat");
+    }
+  });
+})();
+</script>
+
+<style id="gx-chat-button-theme">
+#gx-buy-coins-wa {
+  background: linear-gradient(90deg,#387dff,#b34dff) !important;
+  border: 1px solid #8b70ff !important;
+  color: white !important;
+}
+#gx-buy-coins-wa svg {
+  fill: none !important;
+  stroke: white !important;
+}
+</style>
 
 <style id="gx-coins-button-theme">
 .gx-admin-link {

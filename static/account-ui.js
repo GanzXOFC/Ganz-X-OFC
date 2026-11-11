@@ -19,6 +19,13 @@
   #gx-account-card button{width:100%;padding:12px;margin-top:8px;border:0;border-radius:10px;
   background:linear-gradient(90deg,#694cff,#bd54ff);color:white;font-weight:bold}
   #gx-account-card .gx-secondary{background:#302747}
+  #gx-password-wrap{position:relative;width:100%}
+  #gx-password-wrap input{padding-right:52px!important}
+  #gx-password-wrap button{
+    position:absolute;right:5px;top:50%;transform:translateY(-50%);
+    width:40px;height:38px;padding:0;margin:0;background:transparent;
+    color:white;font-size:19px;border:0;cursor:pointer
+  }
   #gx-account-msg{font-size:13px;white-space:pre-wrap;margin-top:10px;color:#ffe1f4}
   `;
   document.head.appendChild(style);
@@ -30,13 +37,25 @@
       <div style="display:flex;align-items:center;gap:12px"><button id="gx-auth-close" type="button" aria-label="Kembali" style="flex:0 0 32px;width:32px;padding:0;margin:-18px 0 0;background:transparent;border:0;color:white;font-size:28px;cursor:pointer">←</button><h2 style="flex:1;margin:0;text-align:center;transform:translateX(-21px)">Ganz X - OFC</h2></div>
       <div id="gx-account-title"> AKUN</div>
       <input id="gx-username" placeholder="Username" maxlength="24" autocomplete="username">
-      <input id="gx-password" type="password" placeholder="Password" autocomplete="current-password">
+      <div id="gx-password-wrap">
+        <input id="gx-password" type="password" placeholder="Password" autocomplete="current-password">
+        <button id="gx-password-toggle" type="button" aria-label="Lihat password">👁</button>
+      </div>
       <button id="gx-auth-submit"></button>
       <button id="gx-auth-switch" class="gx-secondary">BELUM PUNYA AKUN? DAFTAR</button>
 
       <div id="gx-account-msg"></div>
     </div>`;
   document.body.appendChild(modal);
+  const passwordInput = $("#gx-password");
+  const passwordToggle = $("#gx-password-toggle");
+
+  passwordToggle.addEventListener("click", () => {
+    const visible = passwordInput.type === "password";
+    passwordInput.type = visible ? "text" : "password";
+    passwordToggle.setAttribute("aria-label", visible ? "Sembunyikan password" : "Lihat password");
+  });
+
 
   const brandStyle = document.createElement('style'); brandStyle.textContent = '.gx-login-brand{display:block;background:linear-gradient(90deg,#1e5aa8,#7b2cff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800}.gx-login-label{display:block;color:#c6b6ff;-webkit-text-fill-color:#c6b6ff;font-size:12px;margin-top:4px}'; document.head.appendChild(brandStyle);
   const accountBtn = document.createElement("button");

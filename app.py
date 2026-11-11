@@ -1,4 +1,5 @@
 import os
+import hashlib
 import psycopg
 from psycopg.rows import dict_row
 import secrets
@@ -122,6 +123,50 @@ def init_db():
             )
         """)
 
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS chat_conversations (
+                id BIGSERIAL PRIMARY KEY,
+                account_id BIGINT REFERENCES accounts(id) ON DELETE CASCADE,
+                guest_token_hash TEXT,
+                guest_name TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CHECK (
+                    (account_id IS NOT NULL AND guest_token_hash IS NULL)
+                    OR
+                    (account_id IS NULL AND guest_token_hash IS NOT NULL)
+                )
+            )
+        """)
+
+        db.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS chat_conversations_account_idx
+            ON chat_conversations(account_id)
+            WHERE account_id IS NOT NULL
+        """)
+
+        db.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS chat_conversations_guest_idx
+            ON chat_conversations(guest_token_hash)
+            WHERE guest_token_hash IS NOT NULL
+        """)
+
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                id BIGSERIAL PRIMARY KEY,
+                conversation_id BIGINT NOT NULL
+                    REFERENCES chat_conversations(id) ON DELETE CASCADE,
+                sender TEXT NOT NULL CHECK(sender IN ('customer', 'admin')),
+                message TEXT NOT NULL CHECK(char_length(message) BETWEEN 1 AND 1000),
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        db.execute("""
+            CREATE INDEX IF NOT EXISTS chat_messages_conversation_idx
+            ON chat_messages(conversation_id, id)
+        """)
+
 
 def current_account():
     token = request.headers.get("X-Account-Token", "")
@@ -142,6 +187,510 @@ def login_required(fn):
             return jsonify({"ok": False, "message": "Login terlebih dahulu untuk melanjutkan."}), 401
         return fn(account, *args, **kwargs)
     return wrapper
+
+
+def chat_admin_authorized():
+    supplied = request.headers.get("X-Admin-Key", "")
+    return bool(ADMIN_KEY) and secrets.compare_digest(supplied, ADMIN_KEY)
+
+
+def chat_find_customer_conversation(db, account, guest_token):
+    if account:
+        return db.execute(
+            "SELECT id FROM chat_conversations WHERE account_id=%s",
+            (account["id"],)
+        ).fetchone()
+
+    if not guest_token or len(guest_token) > 200:
+        return None
+
+    token_hash = hashlib.sha256(guest_token.encode()).hexdigest()
+    return db.execute(
+        "SELECT id FROM chat_conversations WHERE guest_token_hash=%s",
+        (token_hash,)
+    ).fetchone()
+
+
+@app.post("/api/chat/session")
+def chat_customer_session():
+    data = request.get_json(silent=True) or {}
+    account = current_account()
+    guest_token = request.headers.get("X-Chat-Guest-Token", "").strip()
+
+    with db_connect() as db:
+        if account:
+            conversation = db.execute(
+                "SELECT id FROM chat_conversations WHERE account_id=%s",
+                (account["id"],)
+            ).fetchone()
+
+            if not conversation:
+                conversation = db.execute(
+                    """INSERT INTO chat_conversations (account_id)
+                       VALUES (%s) RETURNING id""",
+                    (account["id"],)
+                ).fetchone()
+
+            return jsonify({
+                "ok": True,
+                "conversation_id": conversation["id"],
+                "customer_name": account.get("display_name") or "Ganz X - OFC",
+                "guest": False
+            })
+
+        if not guest_token:
+            guest_name = str(data.get("guest_name", "")).strip()
+            if not 2 <= len(guest_name) <= 30:
+                return jsonify({
+                    "ok": False,
+                    "message": "Nama tamu harus 2–30 karakter."
+                }), 400
+            guest_token = secrets.token_urlsafe(32)
+        else:
+            guest_name = str(data.get("guest_name", "")).strip()[:30]
+
+        token_hash = hashlib.sha256(guest_token.encode()).hexdigest()
+        conversation = db.execute(
+            "SELECT id, guest_name FROM chat_conversations WHERE guest_token_hash=%s",
+            (token_hash,)
+        ).fetchone()
+
+        if not conversation:
+            if not 2 <= len(guest_name) <= 30:
+                return jsonify({
+                    "ok": False,
+                    "message": "Masukkan nama tamu terlebih dahulu."
+                }), 400
+
+            conversation = db.execute(
+                """INSERT INTO chat_conversations (guest_token_hash, guest_name)
+                   VALUES (%s, %s) RETURNING id, guest_name""",
+                (token_hash, guest_name)
+            ).fetchone()
+
+        return jsonify({
+            "ok": True,
+            "conversation_id": conversation["id"],
+            "customer_name": conversation["guest_name"],
+            "guest": True,
+            "guest_token": guest_token
+        })
+
+
+
+CHAT_STATUS_SCHEMA_READY = False
+
+def ensure_chat_status_schema():
+    global CHAT_STATUS_SCHEMA_READY
+    if CHAT_STATUS_SCHEMA_READY:
+        return
+
+    with db_connect() as db:
+        db.execute(
+            "ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ"
+        )
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS chat_admin_presence (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                last_seen_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS chat_customer_presence (
+                conversation_id BIGINT PRIMARY KEY,
+                last_seen_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+    CHAT_STATUS_SCHEMA_READY = True
+
+
+@app.get("/api/chat/messages")
+def chat_customer_messages():
+    account = current_account()
+    guest_token = request.headers.get("X-Chat-Guest-Token", "").strip()
+    ensure_chat_status_schema()
+
+    with db_connect() as db:
+        conversation = chat_find_customer_conversation(db, account, guest_token)
+        if not conversation:
+            return jsonify({"ok": False, "message": "Percakapan tidak ditemukan."}), 404
+
+        db.execute("""
+            INSERT INTO chat_customer_presence (conversation_id, last_seen_at)
+            VALUES (%s, CURRENT_TIMESTAMP)
+            ON CONFLICT (conversation_id)
+            DO UPDATE SET last_seen_at=CURRENT_TIMESTAMP
+        """, (conversation["id"],))
+
+        admin_online = db.execute("""
+            SELECT EXISTS (
+                SELECT 1 FROM chat_admin_presence
+                WHERE id=1
+                  AND last_seen_at > CURRENT_TIMESTAMP - INTERVAL '45 seconds'
+            ) AS online
+        """).fetchone()["online"]
+
+        rows = db.execute(
+            """SELECT id, sender, message,
+                      (image_data IS NOT NULL) AS has_photo,
+                      to_char(created_at AT TIME ZONE 'Asia/Jakarta', 'HH24:MI') AS created_time,
+                      read_at
+               FROM chat_messages
+               WHERE conversation_id=%s
+               ORDER BY id DESC LIMIT 100""",
+            (conversation["id"],)
+        ).fetchall()
+
+    return jsonify({
+        "ok": True,
+        "admin_online": admin_online,
+        "messages": list(reversed(rows))
+    })
+
+
+@app.post("/api/chat/read")
+def chat_customer_mark_read():
+    account = current_account()
+    guest_token = request.headers.get("X-Chat-Guest-Token", "").strip()
+    ensure_chat_status_schema()
+
+    with db_connect() as db:
+        conversation = chat_find_customer_conversation(db, account, guest_token)
+        if not conversation:
+            return jsonify({"ok": False, "message": "Percakapan tidak ditemukan."}), 404
+
+        db.execute(
+            """UPDATE chat_messages
+               SET read_at=CURRENT_TIMESTAMP
+               WHERE conversation_id=%s
+                 AND sender='admin'
+                 AND read_at IS NULL""",
+            (conversation["id"],)
+        )
+
+    return jsonify({"ok": True})
+
+
+@app.post("/api/chat/messages")
+def chat_customer_send_message():
+    account = current_account()
+    guest_token = request.headers.get("X-Chat-Guest-Token", "").strip()
+    data = request.get_json(silent=True) or {}
+    message = str(data.get("message", "")).strip()
+
+    if not message or len(message) > 1000:
+        return jsonify({
+            "ok": False,
+            "message": "Pesan harus 1–1000 karakter."
+        }), 400
+
+    with db_connect() as db:
+        conversation = chat_find_customer_conversation(db, account, guest_token)
+        if not conversation:
+            return jsonify({"ok": False, "message": "Percakapan tidak ditemukan."}), 404
+
+        db.execute(
+            """INSERT INTO chat_messages (conversation_id, sender, message)
+               VALUES (%s, 'customer', %s)""",
+            (conversation["id"], message)
+        )
+        db.execute(
+            "UPDATE chat_conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+            (conversation["id"],)
+        )
+
+    return jsonify({"ok": True, "message": "Pesan terkirim."})
+
+
+
+@app.post("/api/chat/photo")
+def chat_customer_send_photo():
+    account = current_account()
+    guest_token = request.headers.get("X-Chat-Guest-Token", "").strip()
+    photo = request.files.get("photo")
+
+    if not photo:
+        return jsonify({"ok": False, "message": "Pilih foto terlebih dahulu."}), 400
+
+    image_data = photo.stream.read(3 * 1024 * 1024 + 1)
+    if not image_data or len(image_data) > 3 * 1024 * 1024:
+        return jsonify({"ok": False, "message": "Ukuran foto maksimal 3 MB."}), 400
+
+    if image_data.startswith(b"\xff\xd8\xff"):
+        mime = "image/jpeg"
+    elif image_data.startswith(b"\x89PNG\r\n\x1a\n"):
+        mime = "image/png"
+    elif len(image_data) >= 12 and image_data[:4] == b"RIFF" and image_data[8:12] == b"WEBP":
+        mime = "image/webp"
+    else:
+        return jsonify({"ok": False, "message": "Format foto harus JPEG, PNG, atau WEBP."}), 400
+
+    with db_connect() as db:
+        conversation = chat_find_customer_conversation(db, account, guest_token)
+        if not conversation:
+            return jsonify({"ok": False, "message": "Percakapan tidak ditemukan."}), 404
+
+        db.execute("""
+            INSERT INTO chat_messages
+                (conversation_id, sender, message, image_data, image_mime)
+            VALUES (%s, 'customer', '[Foto]', %s, %s)
+        """, (conversation["id"], image_data, mime))
+        db.execute(
+            "UPDATE chat_conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+            (conversation["id"],)
+        )
+
+    return jsonify({"ok": True, "message": "Foto terkirim."})
+
+
+@app.get("/api/chat/photo/<int:message_id>")
+def chat_customer_get_photo(message_id):
+    account = current_account()
+    guest_token = request.headers.get("X-Chat-Guest-Token", "").strip()
+
+    with db_connect() as db:
+        conversation = chat_find_customer_conversation(db, account, guest_token)
+        if not conversation:
+            return jsonify({"ok": False, "message": "Percakapan tidak ditemukan."}), 404
+
+        row = db.execute("""
+            SELECT image_data, image_mime FROM chat_messages
+            WHERE id=%s AND conversation_id=%s AND image_data IS NOT NULL
+        """, (message_id, conversation["id"])).fetchone()
+
+    if not row:
+        return jsonify({"ok": False, "message": "Foto tidak ditemukan."}), 404
+
+    return Response(row["image_data"], mimetype=row["image_mime"],
+                    headers={"Cache-Control": "private, no-store",
+                             "X-Content-Type-Options": "nosniff"})
+
+
+@app.get("/admin/chat/conversations")
+def chat_admin_conversations():
+    if not chat_admin_authorized():
+        return jsonify({"ok": False, "message": "Akses admin ditolak."}), 403
+
+    with db_connect() as db:
+        rows = db.execute("""
+            SELECT c.id,
+                   CASE WHEN c.account_id IS NOT NULL THEN COALESCE(NULLIF(BTRIM(a.display_name), ''), 'Pelanggan') ELSE COALESCE(NULLIF(BTRIM(c.guest_name), ''), 'Tamu') END AS customer_name,
+                   CASE WHEN c.account_id IS NULL THEN TRUE ELSE FALSE END AS guest,
+                   CASE
+                       WHEN c.account_id IS NOT NULL AND a.avatar_data IS NOT NULL
+                       THEN '/api/avatar/' || a.id::text || '?v=' || COALESCE(a.avatar_version, 0)::text
+                       ELSE NULL
+                   END AS avatar_url,
+                   COALESCE(m.message, '') AS last_message,
+                   c.updated_at::text AS updated_at
+            FROM chat_conversations c
+            LEFT JOIN accounts a ON a.id=c.account_id
+            LEFT JOIN LATERAL (
+                SELECT message FROM chat_messages
+                WHERE conversation_id=c.id
+                ORDER BY id DESC LIMIT 1
+            ) m ON TRUE
+            ORDER BY c.updated_at DESC
+            LIMIT 100
+        """).fetchall()
+
+    return jsonify({"ok": True, "conversations": rows})
+
+
+
+@app.post("/admin/chat/presence")
+def chat_admin_presence():
+    if not chat_admin_authorized():
+        return jsonify({"ok": False, "message": "Akses admin ditolak."}), 403
+
+    ensure_chat_status_schema()
+
+    with db_connect() as db:
+        db.execute("""
+            INSERT INTO chat_admin_presence (id, last_seen_at)
+            VALUES (1, CURRENT_TIMESTAMP)
+            ON CONFLICT (id)
+            DO UPDATE SET last_seen_at=CURRENT_TIMESTAMP
+        """)
+
+    return jsonify({"ok": True})
+
+
+@app.route("/admin/chat/<int:conversation_id>/messages", methods=["GET", "POST"])
+def chat_admin_messages(conversation_id):
+    if not chat_admin_authorized():
+        return jsonify({"ok": False, "message": "Akses admin ditolak."}), 403
+
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+        message = str(data.get("message", "")).strip()
+
+        if not message or len(message) > 1000:
+            return jsonify({
+                "ok": False,
+                "message": "Pesan harus 1–1000 karakter."
+            }), 400
+
+        with db_connect() as db:
+            exists = db.execute(
+                "SELECT id FROM chat_conversations WHERE id=%s",
+                (conversation_id,)
+            ).fetchone()
+            if not exists:
+                return jsonify({"ok": False, "message": "Percakapan tidak ditemukan."}), 404
+
+            db.execute(
+                """INSERT INTO chat_messages (conversation_id, sender, message)
+                   VALUES (%s, 'admin', %s)""",
+                (conversation_id, message)
+            )
+            db.execute(
+                """UPDATE chat_messages
+                   SET read_at=CURRENT_TIMESTAMP
+                   WHERE conversation_id=%s
+                     AND sender='customer'
+                     AND read_at IS NULL""",
+                (conversation_id,)
+            )
+            db.execute(
+                "UPDATE chat_conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+                (conversation_id,)
+            )
+
+        return jsonify({"ok": True, "message": "Balasan terkirim."})
+
+    ensure_chat_status_schema()
+    with db_connect() as db:
+        db.execute("""
+            INSERT INTO chat_admin_presence (id, last_seen_at)
+            VALUES (1, CURRENT_TIMESTAMP)
+            ON CONFLICT (id)
+            DO UPDATE SET last_seen_at=CURRENT_TIMESTAMP
+        """)
+        exists = db.execute(
+            "SELECT id FROM chat_conversations WHERE id=%s",
+            (conversation_id,)
+        ).fetchone()
+        if not exists:
+            return jsonify({"ok": False, "message": "Percakapan tidak ditemukan."}), 404
+
+        customer_online = db.execute("""
+            SELECT EXISTS (
+                SELECT 1 FROM chat_customer_presence
+                WHERE conversation_id=%s
+                  AND last_seen_at > CURRENT_TIMESTAMP - INTERVAL '45 seconds'
+            ) AS online
+        """, (conversation_id,)).fetchone()["online"]
+
+        rows = db.execute(
+            """SELECT id, sender, message,
+                      (image_data IS NOT NULL) AS has_photo,
+                      to_char(created_at AT TIME ZONE 'Asia/Jakarta', 'HH24:MI') AS created_time,
+                      read_at
+               FROM chat_messages
+               WHERE conversation_id=%s
+               ORDER BY id DESC LIMIT 100""",
+            (conversation_id,)
+        ).fetchall()
+
+    return jsonify({
+        "ok": True,
+        "customer_online": customer_online,
+        "messages": list(reversed(rows))
+    })
+
+
+
+@app.post("/admin/chat/<int:conversation_id>/read")
+def chat_admin_mark_read(conversation_id):
+    if not chat_admin_authorized():
+        return jsonify({"ok": False, "message": "Akses admin ditolak."}), 403
+
+    ensure_chat_status_schema()
+
+    with db_connect() as db:
+        db.execute(
+            """UPDATE chat_messages
+               SET read_at=CURRENT_TIMESTAMP
+               WHERE conversation_id=%s
+                 AND sender='customer'
+                 AND read_at IS NULL""",
+            (conversation_id,)
+        )
+
+    return jsonify({"ok": True})
+
+
+@app.post("/admin/chat/<int:conversation_id>/photo")
+def chat_admin_send_photo(conversation_id):
+    if not chat_admin_authorized():
+        return jsonify({"ok": False, "message": "Akses admin ditolak."}), 403
+
+    photo = request.files.get("photo")
+    if not photo:
+        return jsonify({"ok": False, "message": "Pilih foto terlebih dahulu."}), 400
+
+    image_data = photo.stream.read(3 * 1024 * 1024 + 1)
+    if not image_data or len(image_data) > 3 * 1024 * 1024:
+        return jsonify({"ok": False, "message": "Ukuran foto maksimal 3 MB."}), 400
+
+    if image_data.startswith(b"\xff\xd8\xff"):
+        mime = "image/jpeg"
+    elif image_data.startswith(b"\x89PNG\r\n\x1a\n"):
+        mime = "image/png"
+    elif len(image_data) >= 12 and image_data[:4] == b"RIFF" and image_data[8:12] == b"WEBP":
+        mime = "image/webp"
+    else:
+        return jsonify({"ok": False, "message": "Format foto harus JPEG, PNG, atau WEBP."}), 400
+
+    with db_connect() as db:
+        exists = db.execute(
+            "SELECT id FROM chat_conversations WHERE id=%s",
+            (conversation_id,)
+        ).fetchone()
+        if not exists:
+            return jsonify({"ok": False, "message": "Percakapan tidak ditemukan."}), 404
+
+        db.execute("""
+            INSERT INTO chat_messages
+                (conversation_id, sender, message, image_data, image_mime)
+            VALUES (%s, 'admin', '[Foto]', %s, %s)
+        """, (conversation_id, image_data, mime))
+        db.execute(
+            """UPDATE chat_messages
+               SET read_at=CURRENT_TIMESTAMP
+               WHERE conversation_id=%s
+                 AND sender='customer'
+                 AND read_at IS NULL""",
+            (conversation_id,)
+        )
+        db.execute(
+            "UPDATE chat_conversations SET updated_at=CURRENT_TIMESTAMP WHERE id=%s",
+            (conversation_id,)
+        )
+
+    return jsonify({"ok": True, "message": "Foto terkirim."})
+
+
+@app.get("/admin/chat/photo/<int:message_id>")
+def chat_admin_get_photo(message_id):
+    if not chat_admin_authorized():
+        return jsonify({"ok": False, "message": "Akses admin ditolak."}), 403
+
+    with db_connect() as db:
+        row = db.execute("""
+            SELECT image_data, image_mime FROM chat_messages
+            WHERE id=%s AND image_data IS NOT NULL
+        """, (message_id,)).fetchone()
+
+    if not row:
+        return jsonify({"ok": False, "message": "Foto tidak ditemukan."}), 404
+
+    return Response(row["image_data"], mimetype=row["image_mime"],
+                    headers={"Cache-Control": "private, no-store",
+                             "X-Content-Type-Options": "nosniff"})
+
 
 @app.get("/api/account")
 def account_info():
@@ -409,6 +958,36 @@ def logout(account):
 def coins(account):
     return jsonify({"ok": True, "coins": account["coins"]})
 
+@app.get("/admin/search-accounts")
+def admin_search_accounts():
+    if not ADMIN_KEY or not secrets.compare_digest(
+        request.headers.get("X-Admin-Key", ""), ADMIN_KEY
+    ):
+        return jsonify({"ok": False, "message": "Akses admin ditolak."}), 403
+
+    query = request.args.get("q", "").strip()
+    if len(query) < 2:
+        return jsonify({"ok": True, "users": []})
+
+    with db_connect() as db:
+        rows = db.execute(
+            """SELECT username, coins
+               FROM accounts
+               WHERE username ILIKE %s
+               ORDER BY username
+               LIMIT 20""",
+            (f"%{query}%",)
+        ).fetchall()
+
+    return jsonify({
+        "ok": True,
+        "users": [
+            {"username": row["username"], "coins": row["coins"]}
+            for row in rows
+        ]
+    })
+
+
 @app.post("/admin/add-coins")
 def admin_add_coins():
     if not ADMIN_KEY or not secrets.compare_digest(request.headers.get("X-Admin-Key", ""), ADMIN_KEY):
@@ -669,6 +1248,15 @@ def pwa_service_worker():
     response.headers["Service-Worker-Allowed"] = "/"
     response.headers["Cache-Control"] = "no-cache"
     return response
+
+
+@app.get("/admin/chat")
+def admin_chat_page():
+    from flask import send_from_directory
+    return send_from_directory(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "static"),
+        "admin-chat.html"
+    )
 
 
 @app.get("/")
