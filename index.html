@@ -698,17 +698,17 @@ body {
   box-shadow: 0 0 20px rgba(96, 112, 255, .22);
 }
 
-/* WARNA PERINGKAT TOP 10 */
+/* WARNA GRADASI PERINGKAT TOP 10 */
 .gx-topcoin-rank.rank-1 { color:#FFD700; text-shadow:0 0 9px #FFD70099; }
-.gx-topcoin-rank.rank-2 { color:#FFF176; text-shadow:0 0 7px #FFF17677; }
-.gx-topcoin-rank.rank-3 { color:#FFB74D; text-shadow:0 0 7px #FFB74D77; }
-.gx-topcoin-rank.rank-4 { color:#69F0AE; }
-.gx-topcoin-rank.rank-5 { color:#40DFFF; }
-.gx-topcoin-rank.rank-6 { color:#64A5FF; }
-.gx-topcoin-rank.rank-7 { color:#B388FF; }
-.gx-topcoin-rank.rank-8 { color:#FF80AB; }
-.gx-topcoin-rank.rank-9 { color:#FF8A65; }
-.gx-topcoin-rank.rank-10 { color:#D4E157; }
+.gx-topcoin-rank.rank-2 { color:#EFCB32; text-shadow:0 0 8px #EFCB3277; }
+.gx-topcoin-rank.rank-3 { color:#C99A32; text-shadow:0 0 8px #C99A3277; }
+.gx-topcoin-rank.rank-4 { color:#F28C28; text-shadow:0 0 7px #F28C2877; }
+.gx-topcoin-rank.rank-5 { color:#D96A1B; text-shadow:0 0 7px #D96A1B77; }
+.gx-topcoin-rank.rank-6 { color:#C94A24; text-shadow:0 0 7px #C94A2477; }
+.gx-topcoin-rank.rank-7 { color:#D93636; }
+.gx-topcoin-rank.rank-8 { color:#B9273D; }
+.gx-topcoin-rank.rank-9 { color:#A52355; }
+.gx-topcoin-rank.rank-10 { color:#861F63; }
 
 
 /* PROFIL AKUN DAN TOP COINS */
@@ -1409,6 +1409,10 @@ body {
       </div>
 
       <div id="gx-chat-area" style="display:none;">
+        <button id="gx-chat-push-enable" type="button"
+          style="width:100%;margin-bottom:10px;padding:11px;border:1px solid #514174;border-radius:10px;background:linear-gradient(90deg,#245fc5,#8141bd);color:white;font-weight:800;">
+          NYALAKAN NOTIFIKASI
+        </button>
         <div id="gx-chat-messages" aria-live="polite"
           style="height: min(52vh,430px);min-height:260px;overflow-y:auto;padding:12px;border:1px solid #514174;border-radius:12px;background:#090713 url('/static/chat-background.jpg') center center / cover no-repeat;display:flex;flex-direction:column;gap:9px;">
         </div>
@@ -1828,8 +1832,8 @@ body {
 })();
 </script>
 
-<script src="/static/account-ui.js?v=14"></script>
-<script src="/static/chat.js?v=3"></script>
+<script src="/static/account-ui.js?v=15"></script>
+<script src="/static/chat.js?v=4"></script>
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

@@ -291,7 +291,7 @@
             ${user.crown_enabled ? '<span class="gx-topcoin-crown" aria-hidden="true">👑</span>' : ''}
             <img src="${escapeHtml(user.avatar_url)}" alt="" loading="lazy" decoding="async" fetchpriority="low" onerror="this.src='/static/profil.webp'">
           </div>
-          <div class="gx-topcoin-name" data-name-color="${["white","red","blue","gradient"].includes(user.name_color) ? user.name_color : "white"}">${escapeHtml(user.display_name || "Ganz X - OFC")}</div>
+          <div class="gx-topcoin-name" data-name-color="${["white","red","blue","gradient"].includes(user.name_color) ? user.name_color : "white"}" style="${user.name_color === "gradient" ? "background:linear-gradient(90deg,#42a5ff,#4d75ff,#9870ff,#c16bff,#6b8cff);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;" : ""}">${escapeHtml(user.display_name || "Ganz X - OFC")}</div>
           <div class="gx-topcoin-balance">🪙 ${Number(user.coins).toLocaleString("id-ID")}</div>
         </div>
       `).join("");
