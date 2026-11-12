@@ -20,3 +20,4 @@ __pycache__/
 *.backup*
 *.bak*
 *.save*
+vapid_private.pem

@@ -4,6 +4,7 @@
   const guestName = document.getElementById("gx-chat-guest-name");
   const startButton = document.getElementById("gx-chat-start");
   const chatArea = document.getElementById("gx-chat-area");
+  const pushButton = document.getElementById("gx-chat-push-enable");
   const messagesBox = document.getElementById("gx-chat-messages");
   const form = document.getElementById("gx-chat-form");
   const input = document.getElementById("gx-chat-input");
@@ -140,6 +141,16 @@
 
     return data;
   }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const raw = atob(base64);
+    return Uint8Array.from(raw, char => char.charCodeAt(0));
+  }
+
 
   function addMessage(item) {
     if (!item || !item.id) return;
@@ -295,6 +306,7 @@
       chatArea.style.display = "block";
 
       await loadMessages();
+      await restorePushSubscription();
 
       if (polling) clearInterval(polling);
       polling = setInterval(loadMessages, 4000);
@@ -303,6 +315,87 @@
     } finally {
       loadingBox.style.display = "none";
     }
+  }
+
+  async function restorePushSubscription() {
+    if (!pushButton) return;
+
+    pushButton.disabled = false;
+    pushButton.style.display = "";
+
+    if (!("serviceWorker" in navigator) ||
+        !("PushManager" in window) ||
+        !("Notification" in window) ||
+        Notification.permission !== "granted") return;
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) return;
+
+      await request("/api/chat/push/subscribe", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({subscription: subscription.toJSON()})
+      });
+
+      pushButton.style.display = "none";
+    } catch (error) {
+      console.warn("Gagal memulihkan langganan push:", error);
+    }
+  }
+
+  if (pushButton) {
+    pushButton.addEventListener("click", async () => {
+      if (!conversationReady) {
+        showError("Buka chat terlebih dahulu.");
+        return;
+      }
+
+      if (!("serviceWorker" in navigator) ||
+          !("PushManager" in window) ||
+          !("Notification" in window)) {
+        showError("Browser ini belum mendukung notifikasi push.");
+        return;
+      }
+
+      pushButton.disabled = true;
+      showError("");
+
+      try {
+        let permission = Notification.permission;
+        if (permission === "default") {
+          permission = await Notification.requestPermission();
+        }
+        if (permission !== "granted") {
+          throw new Error("Izin notifikasi belum diberikan.");
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+
+        const keyData = await request("/api/chat/push/public-key");
+        if (!subscription) {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(keyData.public_key)
+          });
+        }
+
+        await request("/api/chat/push/subscribe", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({subscription: subscription.toJSON()})
+        });
+
+        pushButton.style.display = "none";
+        showError("Notifikasi chat berhasil diaktifkan.");
+      } catch (error) {
+        showError(error.message || "Gagal mengaktifkan notifikasi.");
+      } finally {
+        pushButton.disabled = false;
+      }
+    });
   }
 
   window.gxChatOpen = async function () {

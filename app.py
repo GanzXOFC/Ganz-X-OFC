@@ -1,7 +1,11 @@
 import os
 import hashlib
+import json
 import psycopg
 from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
+from pywebpush import webpush, WebPushException
+from py_vapid import Vapid
 import secrets
 import requests
 from functools import wraps
@@ -211,6 +215,277 @@ def chat_find_customer_conversation(db, account, guest_token):
     ).fetchone()
 
 
+
+CHAT_PUSH_SCHEMA_READY = False
+CHAT_VAPID_PUBLIC_KEY = "BAEY04J0KWrsJnVTz-4MG0cr0OHKAlFBQXwkIoj2dAWrbO5oG4GC8MI26XKWhGwqhFCwpat9RGMQWWPoU7qdE08"
+
+
+def ensure_chat_push_schema():
+    global CHAT_PUSH_SCHEMA_READY
+    if CHAT_PUSH_SCHEMA_READY:
+        return
+
+    with db_connect() as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS chat_push_subscriptions (
+                id BIGSERIAL PRIMARY KEY,
+                role TEXT NOT NULL CHECK (role IN ('admin', 'customer')),
+                conversation_id BIGINT REFERENCES chat_conversations(id) ON DELETE CASCADE,
+                endpoint TEXT NOT NULL UNIQUE,
+                subscription JSONB NOT NULL,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CHECK (
+                    (role='admin' AND conversation_id IS NULL) OR
+                    (role='customer' AND conversation_id IS NOT NULL)
+                )
+            )
+        """)
+        db.execute("""
+            ALTER TABLE chat_push_subscriptions
+            DROP CONSTRAINT IF EXISTS chat_push_subscriptions_endpoint_key
+        """)
+
+    CHAT_PUSH_SCHEMA_READY = True
+
+
+def send_chat_push(role, conversation_id=None, title="GANZ X - OFC",
+                   body="Ada pesan baru.", url="/"):
+    try:
+        ensure_chat_push_schema()
+
+        with db_connect() as db:
+            if role == "customer":
+                rows = db.execute("""
+                    SELECT endpoint, subscription
+                    FROM chat_push_subscriptions
+                    WHERE role='customer' AND conversation_id=%s
+                """, (conversation_id,)).fetchall()
+            else:
+                rows = db.execute("""
+                    SELECT endpoint, subscription
+                    FROM chat_push_subscriptions
+                    WHERE role='admin'
+                """).fetchall()
+
+        if not rows:
+            return
+
+        pem = os.getenv("VAPID_PRIVATE_KEY", "").replace("\\n", "\n").strip()
+        if pem:
+            vapid = Vapid.from_pem(pem.encode())
+        else:
+            path = os.getenv("VAPID_PRIVATE_KEY_FILE", "vapid_private.pem")
+            with open(path, "rb") as f:
+                vapid = Vapid.from_pem(f.read())
+
+        subject = os.getenv(
+            "VAPID_SUBJECT",
+            "https://ganz-x-ofc-fsgd0.faable.link"
+        )
+        payload = json.dumps({
+            "title": title,
+            "body": body,
+            "url": url,
+            "tag": f"gx-chat-{role}-{conversation_id or 'admin'}"
+        })
+
+        expired = []
+        for row in rows:
+            try:
+                webpush(
+                    subscription_info=row["subscription"],
+                    data=payload,
+                    vapid_private_key=vapid,
+                    vapid_claims={"sub": subject}
+                )
+            except WebPushException as exc:
+                response = getattr(exc, "response", None)
+                if response is not None and response.status_code in (404, 410):
+                    expired.append(row["endpoint"])
+                else:
+                    app.logger.warning("Chat push gagal: %s", exc)
+            except Exception:
+                app.logger.exception("Kesalahan pengiriman chat push.")
+
+        if expired:
+            with db_connect() as db:
+                db.execute(
+                    "DELETE FROM chat_push_subscriptions WHERE endpoint = ANY(%s)",
+                    (expired,)
+                )
+
+    except Exception:
+        app.logger.exception("Chat push tidak dapat diproses.")
+
+
+
+@app.get("/api/chat/push/public-key")
+def chat_push_public_key():
+    return jsonify({
+        "ok": True,
+        "public_key": CHAT_VAPID_PUBLIC_KEY
+    })
+
+
+@app.post("/api/chat/push/unsubscribe")
+def chat_push_unsubscribe():
+    data = request.get_json(silent=True) or {}
+    endpoint = data.get("endpoint")
+
+    if not isinstance(endpoint, str) or not endpoint.startswith("https://"):
+        return jsonify({"ok": False, "message": "Endpoint tidak valid."}), 400
+
+    if chat_admin_authorized():
+        role = "admin"
+        conversation_id = None
+    else:
+        account = current_account()
+        guest_token = request.headers.get("X-Chat-Guest-Token", "").strip()
+
+        with db_connect() as db:
+            conversation = chat_find_customer_conversation(
+                db, account, guest_token
+            )
+
+        if not conversation:
+            return jsonify({"ok": False, "message": "Percakapan tidak ditemukan."}), 404
+
+        role = "customer"
+        conversation_id = conversation["id"]
+
+    try:
+        ensure_chat_push_schema()
+        with db_connect() as db:
+            db.execute("""
+                DELETE FROM chat_push_subscriptions
+                WHERE endpoint=%s
+                  AND role=%s
+                  AND conversation_id IS NOT DISTINCT FROM %s
+            """, (endpoint, role, conversation_id))
+
+        return jsonify({"ok": True, "message": "Notifikasi dimatikan."})
+    except Exception:
+        app.logger.exception("Gagal mematikan langganan notifikasi.")
+        return jsonify({"ok": False, "message": "Gagal mematikan notifikasi."}), 500
+
+
+@app.post("/api/chat/push/subscribe")
+def chat_push_subscribe():
+    data = request.get_json(silent=True) or {}
+    subscription = data.get("subscription")
+
+    if not isinstance(subscription, dict):
+        return jsonify({"ok": False, "message": "Data notifikasi tidak valid."}), 400
+
+    endpoint = subscription.get("endpoint")
+    keys = subscription.get("keys")
+
+    if (
+        not isinstance(endpoint, str) or
+        not endpoint.startswith("https://") or
+        not isinstance(keys, dict) or
+        not keys.get("p256dh") or
+        not keys.get("auth")
+    ):
+        return jsonify({"ok": False, "message": "Data langganan tidak lengkap."}), 400
+
+    if chat_admin_authorized():
+        role = "admin"
+        conversation_id = None
+    else:
+        account = current_account()
+        guest_token = request.headers.get("X-Chat-Guest-Token", "").strip()
+
+        with db_connect() as db:
+            conversation = chat_find_customer_conversation(
+                db, account, guest_token
+            )
+
+        if not conversation:
+            return jsonify({
+                "ok": False,
+                "message": "Percakapan tidak ditemukan."
+            }), 404
+
+        role = "customer"
+        conversation_id = conversation["id"]
+
+    try:
+        ensure_chat_push_schema()
+
+        with db_connect() as db:
+            db.execute("""
+                DELETE FROM chat_push_subscriptions
+                WHERE endpoint=%s AND role=%s
+            """, (endpoint, role))
+
+            db.execute("""
+                INSERT INTO chat_push_subscriptions
+                    (role, conversation_id, endpoint, subscription)
+                VALUES (%s, %s, %s, %s)
+            """, (
+                role,
+                conversation_id,
+                endpoint,
+                Jsonb(subscription)
+            ))
+
+        return jsonify({
+            "ok": True,
+            "message": "Notifikasi berhasil diaktifkan."
+        })
+
+    except Exception:
+        app.logger.exception("Gagal menyimpan langganan notifikasi.")
+        return jsonify({
+            "ok": False,
+            "message": "Gagal menyimpan langganan notifikasi."
+        }), 500
+
+
+def chat_insert_welcome_message(db, conversation_id):
+    message = """𝗛𝗔𝗥𝗚𝗔 𝗖𝗢𝗜𝗡𝗦
+
+5 COINS 🪙 = Rp3.000
+10 COINS 🪙 = Rp6.000
+15 COINS 🪙 = Rp9.000
+20 COINS 🪙 = Rp12.000
+25 COINS 🪙 = Rp15.000
+30 COINS 🪙 = Rp18.000
+35 COINS 🪙 = Rp21.000
+40 COINS 🪙 = Rp24.000
+45 COINS 🪙 = Rp27.000
+50 COINS 🪙 = Rp30.000
+55 COINS 🪙 = Rp33.000
+60 COINS 🪙 = Rp36.000
+65 COINS 🪙 = Rp39.000
+70 COINS 🪙 = Rp42.000
+75 COINS 🪙 = Rp45.000
+80 COINS 🪙 = Rp48.000
+85 COINS 🪙 = Rp51.000
+90 COINS 🪙 = Rp54.000
+95 COINS 🪙 = Rp57.000
+100 COINS 🪙 = Rp60.000
+
+• 𝗦𝗶𝗹𝗮𝗵𝗸𝗮𝗻 𝗣𝗶𝗹𝗶𝗵 𝗛𝗮𝗿𝗴𝗮 𝗰𝗼𝗶𝗻𝘀 𝘆𝗮𝗻𝗴 𝗮𝗱𝗮
+• 𝗛𝗮𝗿𝗴𝗮 𝗰𝗼𝗶𝗻𝘀 𝘁𝗶𝗱𝗮𝗸 𝗯𝗼𝗹𝗲𝗵 𝗸𝘂𝗿𝗮𝗻𝗴/𝗹𝗲𝗯𝗶𝗵
+• 𝗝𝗶𝗸𝗮 𝘀𝘂𝗱𝗮𝗵, 𝗧𝗙 𝗸𝗲 𝗻𝗼 𝗱𝗮𝗻𝗮, 𝗱𝗮𝗻 𝗸𝗶𝗿𝗶𝗺 𝗯𝘂𝗸𝘁𝗶 𝗧𝗿𝗮𝗻𝘀𝗮𝗸𝘀𝗶 𝗻𝘆𝗮
+• 𝗝𝗶𝗸𝗮 𝗱𝗮𝗻𝗮 𝗮𝗻𝗱𝗮 𝗯𝗹𝘂𝗺 𝗽𝗿𝗲𝗺𝗶𝘂𝗺/𝗺𝗲𝗺𝗯𝘂𝘁𝘂𝗵𝗸𝗮𝗻 𝗤𝗥, 𝘁𝘂𝗻𝗴𝗴𝘂 𝘀𝗮𝗺𝗽𝗮𝗶 𝗮𝗱𝗺𝗶𝗻 𝗺𝗲𝗺𝗯𝗮𝗹𝗮𝘀 𝗽𝗲𝘀𝗮𝗻 𝗮𝗻𝗱𝗮
+• 𝗦𝗲𝘁𝗲𝗹𝗮𝗵 𝗶𝘁𝘂 𝗸𝗶𝗿𝗶𝗺 𝘂𝘀𝗲𝗿𝗻𝗮𝗺𝗲 𝘄𝗲𝗯, 𝗱𝗮𝗻 𝗮𝗸𝗮𝗻 𝗹𝗮𝗻𝗴𝘀𝘂𝗻𝗴 𝗱𝗶 𝗽𝗿𝗼𝘀𝗲𝘀
+
+𝗗𝗮𝗻𝗮 : 085213698915
+
+𝗞𝗶𝗿𝗶𝗺 𝗯𝘂𝗸𝘁𝗶 𝗧𝗿𝗮𝗻𝘀𝗮𝗸𝘀𝗶 ✅
+𝗞𝗶𝗿𝗶𝗺 𝘂𝘀𝗲𝗿𝗻𝗮𝗺𝗲 ✅
+𝗟𝗮𝗻𝗴𝘀𝘂𝗻𝗴 𝗱𝗶 𝗽𝗿𝗼𝘀𝗲𝘀 ✅"""
+
+    db.execute(
+        """INSERT INTO chat_messages (conversation_id, sender, message)
+           VALUES (%s, 'admin', %s)""",
+        (conversation_id, message)
+    )
+
+
 @app.post("/api/chat/session")
 def chat_customer_session():
     data = request.get_json(silent=True) or {}
@@ -230,6 +505,7 @@ def chat_customer_session():
                        VALUES (%s) RETURNING id""",
                     (account["id"],)
                 ).fetchone()
+                chat_insert_welcome_message(db, conversation["id"])
 
             return jsonify({
                 "ok": True,
@@ -267,6 +543,7 @@ def chat_customer_session():
                    VALUES (%s, %s) RETURNING id, guest_name""",
                 (token_hash, guest_name)
             ).fetchone()
+            chat_insert_welcome_message(db, conversation["id"])
 
         return jsonify({
             "ok": True,
@@ -400,6 +677,12 @@ def chat_customer_send_message():
             (conversation["id"],)
         )
 
+    send_chat_push(
+        "admin",
+        title="💬 PESAN BARU",
+        body="anda memiliki pesan baru",
+        url="/admin/chat"
+    )
     return jsonify({"ok": True, "message": "Pesan terkirim."})
 
 
@@ -441,6 +724,12 @@ def chat_customer_send_photo():
             (conversation["id"],)
         )
 
+    send_chat_push(
+        "admin",
+        title="📸 MENGIRIM FOTO",
+        body="Mengirim foto",
+        url="/admin/chat"
+    )
     return jsonify({"ok": True, "message": "Foto terkirim."})
 
 
@@ -558,6 +847,13 @@ def chat_admin_messages(conversation_id):
                 (conversation_id,)
             )
 
+        send_chat_push(
+            "customer",
+            conversation_id=conversation_id,
+            title="💬 PESAN BARU",
+            body="Caca Membalas Pesan anda",
+            url="/"
+        )
         return jsonify({"ok": True, "message": "Balasan terkirim."})
 
     ensure_chat_status_schema()
@@ -670,6 +966,13 @@ def chat_admin_send_photo(conversation_id):
             (conversation_id,)
         )
 
+    send_chat_push(
+        "customer",
+        conversation_id=conversation_id,
+        title="📸 MENGIRIM FOTO",
+        body="Caca Mengirim Foto",
+        url="/"
+    )
     return jsonify({"ok": True, "message": "Foto terkirim."})
 
 
