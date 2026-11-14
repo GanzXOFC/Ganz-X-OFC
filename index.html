@@ -1199,7 +1199,7 @@ body {
          target="_blank"
          rel="noopener noreferrer">
         <span aria-hidden="true" style="font-size:19px;line-height:1;">💬</span>
-        <span>COINS 🪙</span>
+        <span>HARGA COINS 🪙</span>
         <span class="gx-admin-arrow"></span>
       </a>
     </div>
@@ -2027,11 +2027,12 @@ if ("serviceWorker" in navigator) {
 </style>
 <div id="gx-buy-coins-modal" role="dialog" aria-modal="true" aria-label="Harga Coins">
   <div class="gx-buy-panel">
-    <div id="gx-buy-coins-list" style="display:none"></div>
+    <h2>🪙 HARGA COINS</h2>
+    <div id="gx-buy-coins-list"></div>
     <p style="text-align:center;font-size:12px;line-height:1.6;margin:14px 0">
       📢 Sebelum membeli coins pastikan anda sudah login terlebih dahulu, karena proses pengiriman coins akan di kirim melalui username ✅
     </p>
-    <a class="gx-buy-wa" id="gx-buy-coins-wa" href="#gx-page-chat"><span aria-hidden="true" style="font-size:20px;line-height:1;">💬</span><span>BELI COINS</span></a>
+    <a class="gx-buy-wa" id="gx-buy-coins-wa" href="https://wa.me/6285213698915?text=Halo%20Ka%20Caca%20%F0%9F%91%8B%0AMau%20beli%20coins%20web" target="_blank" rel="noopener noreferrer"><span aria-hidden="true" style="font-size:20px;line-height:1;">💬</span><span>BELI COINS VIA WHATSAPP</span></a>
     
   </div>
 </div>
@@ -2058,13 +2059,11 @@ if ("serviceWorker" in navigator) {
 
   buyLink.removeAttribute("target");
   buyLink.removeAttribute("rel");
-  buyLink.href = "#gx-page-chat";
+  buyLink.href = "#";
   buyLink.addEventListener("click", e => {
     e.preventDefault();
     modal.classList.remove("gx-show");
-    if (typeof window.gxShowPage === "function") {
-      window.gxShowPage("chat");
-    }
+    modal.classList.add("gx-show");
   });
   modal.addEventListener("click", e => {
     if (e.target === modal) modal.classList.remove("gx-show");
@@ -2076,24 +2075,7 @@ if ("serviceWorker" in navigator) {
 </script>
 
 
-<script>
-(() => {
-  const button = document.getElementById("gx-buy-coins-wa");
-  const modal = document.getElementById("gx-buy-coins-modal");
-  if (!button || !modal) return;
 
-  button.removeAttribute("target");
-  button.removeAttribute("rel");
-
-  button.addEventListener("click", event => {
-    event.preventDefault();
-    modal.classList.remove("gx-show");
-    if (typeof window.gxShowPage === "function") {
-      window.gxShowPage("chat");
-    }
-  });
-})();
-</script>
 
 <style id="gx-chat-button-theme">
 #gx-buy-coins-wa {
