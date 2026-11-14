@@ -61,11 +61,11 @@ def init_db():
             ALTER TABLE accounts ADD COLUMN IF NOT EXISTS display_name TEXT
         """)
         db.execute("""
-            UPDATE accounts SET display_name='Ganz X - OFC'
-            WHERE display_name IS NULL OR BTRIM(display_name)=''
+            UPDATE accounts SET display_name='Nickname'
+            WHERE display_name IS NULL OR BTRIM(display_name)='' OR display_name='Ganz X - OFC'
         """)
         db.execute("""
-            ALTER TABLE accounts ALTER COLUMN display_name SET DEFAULT 'Ganz X - OFC'
+            ALTER TABLE accounts ALTER COLUMN display_name SET DEFAULT 'Nickname'
         """)
         db.execute("""
             ALTER TABLE accounts ADD COLUMN IF NOT EXISTS name_color TEXT NOT NULL DEFAULT 'white'
@@ -510,7 +510,7 @@ def chat_customer_session():
             return jsonify({
                 "ok": True,
                 "conversation_id": conversation["id"],
-                "customer_name": account.get("display_name") or "Ganz X - OFC",
+                "customer_name": account.get("display_name") or "Nickname",
                 "guest": False
             })
 
@@ -1012,7 +1012,7 @@ def account_info():
     return jsonify({
         "logged_in": True,
         "username": account["username"],
-        "display_name": account.get("display_name") or "Ganz X - OFC",
+        "display_name": account.get("display_name") or "Nickname",
         "coins": account["coins"],
         "name_color": account.get("name_color") or "white",
         "crown_enabled": bool(account.get("crown_enabled", False)),
@@ -1239,7 +1239,7 @@ def account_leaderboard():
 
         result.append({
             "rank": rank,
-            "display_name": row["display_name"] or "Ganz X - OFC",
+            "display_name": row["display_name"] or "Nickname",
             "name_color": name_color,
             "coins": row["coins"],
             "avatar_url": f"/api/avatar/{row['id']}?v={row['avatar_version']}",
